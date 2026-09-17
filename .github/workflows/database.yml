@@ -1,0 +1,40 @@
+name: Database foundation
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11
+        env:
+          POSTGRES_USER: kc_migration
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: knowledge_catalog
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U kc_migration -d knowledge_catalog"
+          --health-interval 3s --health-timeout 3s --health-retries 30
+    env:
+      KC_TEST_ADMIN_DSN: postgresql://kc_migration:ci-only-password@127.0.0.1:5432/knowledge_catalog
+      KC_MIGRATION_DSN: postgresql://kc_migration:ci-only-password@127.0.0.1:5432/knowledge_catalog
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - run: python -m kc.migrate
+      - run: python -m kc.migrate
+      - run: python -m pytest -q --junitxml=test-results/postgres.xml
+      # Each pytest run provisions and destroys a fresh isolated database.
+      - run: python -m pytest -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgres-test-results
+          path: test-results/

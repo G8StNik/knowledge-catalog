@@ -1,0 +1,465 @@
+{
+  "format_version": 1,
+  "package_key": "general_business",
+  "version": 1,
+  "description": "Optional neutral starter; review and adapt before activation. AI eligibility defaults to false.",
+  "entities": {
+    "catalog.domain": [
+      {
+        "key": "general_business",
+        "display_name": "General Business"
+      }
+    ],
+    "catalog.taxonomy": [
+      {
+        "key": "business_topics",
+        "display_name": "Business Topics"
+      }
+    ],
+    "catalog.taxonomy_term": [
+      {
+        "key": "operations",
+        "display_name": "Operations",
+        "taxonomy_key": "business_topics"
+      },
+      {
+        "key": "human_resources",
+        "display_name": "Human Resources",
+        "taxonomy_key": "business_topics"
+      }
+    ],
+    "catalog.term_alias": [
+      {
+        "key": "hr",
+        "display_name": "HR",
+        "taxonomy_term_key": "human_resources",
+        "alias": "HR",
+        "alias_kind": "ACRONYM",
+        "language": "en"
+      }
+    ],
+    "governance.authority_level": [
+      {
+        "key": "policy_legal_controls",
+        "display_name": "Policy, legal requirements and approved controls",
+        "trust_rank": 1
+      },
+      {
+        "key": "approved_standards",
+        "display_name": "Approved standards, SOPs and definitions",
+        "trust_rank": 2
+      },
+      {
+        "key": "certified_data",
+        "display_name": "Certified datasets and reports",
+        "trust_rank": 3
+      },
+      {
+        "key": "reviewed_knowledge",
+        "display_name": "Reviewed knowledge and SME-approved FAQs",
+        "trust_rank": 4
+      },
+      {
+        "key": "operating_evidence",
+        "display_name": "Projects, meetings, transcripts and tickets",
+        "trust_rank": 5
+      },
+      {
+        "key": "ai_proposed",
+        "display_name": "AI summaries, suggestions and inferred relationships",
+        "trust_rank": 6
+      }
+    ],
+    "governance.classification": [
+      {
+        "key": "public",
+        "display_name": "Public",
+        "sensitivity_rank": 0,
+        "is_ai_eligible": false,
+        "is_external_ai_allowed": false
+      },
+      {
+        "key": "internal",
+        "display_name": "Internal",
+        "sensitivity_rank": 1,
+        "is_ai_eligible": false,
+        "is_external_ai_allowed": false
+      },
+      {
+        "key": "confidential",
+        "display_name": "Confidential",
+        "sensitivity_rank": 2,
+        "is_ai_eligible": false,
+        "is_external_ai_allowed": false
+      },
+      {
+        "key": "restricted",
+        "display_name": "Restricted",
+        "sensitivity_rank": 3,
+        "is_ai_eligible": false,
+        "is_external_ai_allowed": false
+      }
+    ],
+    "governance.role": [
+      {
+        "key": "owner",
+        "display_name": "Owner",
+        "allowed_principal_types": [
+          "USER",
+          "GROUP"
+        ]
+      },
+      {
+        "key": "sme",
+        "display_name": "Sme",
+        "allowed_principal_types": [
+          "USER",
+          "GROUP"
+        ]
+      },
+      {
+        "key": "reviewer",
+        "display_name": "Reviewer",
+        "allowed_principal_types": [
+          "USER",
+          "GROUP"
+        ]
+      },
+      {
+        "key": "approver",
+        "display_name": "Approver",
+        "allowed_principal_types": [
+          "USER",
+          "GROUP"
+        ]
+      }
+    ],
+    "governance.lifecycle_workflow": [
+      {
+        "key": "standard",
+        "display_name": "Standard"
+      }
+    ],
+    "governance.lifecycle_state": [
+      {
+        "key": "draft",
+        "display_name": "Draft",
+        "lifecycle_workflow_key": "standard",
+        "is_initial": true,
+        "is_published": false
+      },
+      {
+        "key": "review",
+        "display_name": "Review",
+        "lifecycle_workflow_key": "standard",
+        "is_initial": false,
+        "is_published": false
+      },
+      {
+        "key": "approved",
+        "display_name": "Approved",
+        "lifecycle_workflow_key": "standard",
+        "is_initial": false,
+        "is_published": false
+      },
+      {
+        "key": "published",
+        "display_name": "Published",
+        "lifecycle_workflow_key": "standard",
+        "is_initial": false,
+        "is_published": true
+      }
+    ],
+    "governance.lifecycle_transition": [
+      {
+        "key": "submit_for_review",
+        "display_name": "Submit For Review",
+        "lifecycle_workflow_key": "standard",
+        "from_state_key": "draft",
+        "to_state_key": "review"
+      },
+      {
+        "key": "approve",
+        "display_name": "Approve",
+        "lifecycle_workflow_key": "standard",
+        "from_state_key": "review",
+        "to_state_key": "approved",
+        "approval_role_key": "approver",
+        "minimum_approvals": 1,
+        "requires_human_approval": true
+      },
+      {
+        "key": "publish",
+        "display_name": "Publish",
+        "lifecycle_workflow_key": "standard",
+        "from_state_key": "approved",
+        "to_state_key": "published",
+        "approval_role_key": "approver",
+        "minimum_approvals": 1,
+        "requires_human_approval": true
+      },
+      {
+        "key": "return_to_draft",
+        "display_name": "Return To Draft",
+        "lifecycle_workflow_key": "standard",
+        "from_state_key": "review",
+        "to_state_key": "draft"
+      }
+    ],
+    "catalog.knowledge_type": [
+      {
+        "key": "policy",
+        "display_name": "Policy",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "sop",
+        "display_name": "Sop",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "faq",
+        "display_name": "Faq",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "decision",
+        "display_name": "Decision",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "contract",
+        "display_name": "Contract",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "training",
+        "display_name": "Training",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "system",
+        "display_name": "System",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "product",
+        "display_name": "Product",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      },
+      {
+        "key": "business_term",
+        "display_name": "Business Term",
+        "default_authority_level_key": "reviewed_knowledge",
+        "default_classification_key": "internal",
+        "lifecycle_workflow_key": "standard"
+      }
+    ],
+    "catalog.custom_field_definition": [
+      {
+        "key": "review_date",
+        "display_name": "Review Date",
+        "data_type": "DATE",
+        "is_required": true
+      },
+      {
+        "key": "department",
+        "display_name": "Department",
+        "data_type": "TEXT"
+      }
+    ],
+    "catalog.knowledge_type_field": [
+      {
+        "key": "policy_review_date",
+        "display_name": "Policy Review Date",
+        "knowledge_type_key": "policy",
+        "custom_field_definition_key": "review_date",
+        "is_required": true
+      },
+      {
+        "key": "sop_review_date",
+        "display_name": "Sop Review Date",
+        "knowledge_type_key": "sop",
+        "custom_field_definition_key": "review_date",
+        "is_required": true
+      },
+      {
+        "key": "faq_review_date",
+        "display_name": "Faq Review Date",
+        "knowledge_type_key": "faq",
+        "custom_field_definition_key": "review_date",
+        "is_required": true
+      },
+      {
+        "key": "contract_review_date",
+        "display_name": "Contract Review Date",
+        "knowledge_type_key": "contract",
+        "custom_field_definition_key": "review_date",
+        "is_required": true
+      }
+    ],
+    "catalog.relationship_type": [
+      {
+        "key": "governs",
+        "display_name": "Governs",
+        "forward_label": "governs",
+        "reverse_label": "governed by"
+      },
+      {
+        "key": "depends_on",
+        "display_name": "Depends On",
+        "forward_label": "depends on",
+        "reverse_label": "required by"
+      },
+      {
+        "key": "supersedes",
+        "display_name": "Supersedes",
+        "forward_label": "supersedes",
+        "reverse_label": "superseded by"
+      }
+    ],
+    "catalog.relationship_type_restriction": [
+      {
+        "key": "policy_governs_sop",
+        "display_name": "Policy Governs Sop",
+        "relationship_type_key": "governs",
+        "source_knowledge_type_key": "policy",
+        "target_knowledge_type_key": "sop"
+      }
+    ],
+    "governance.responsibility_requirement": [
+      {
+        "key": "policy_owner",
+        "display_name": "Policy Owner",
+        "knowledge_type_key": "policy",
+        "role_key": "owner",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "policy_approver",
+        "display_name": "Policy Approver",
+        "knowledge_type_key": "policy",
+        "role_key": "approver",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "sop_owner",
+        "display_name": "Sop Owner",
+        "knowledge_type_key": "sop",
+        "role_key": "owner",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "sop_approver",
+        "display_name": "Sop Approver",
+        "knowledge_type_key": "sop",
+        "role_key": "approver",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "faq_owner",
+        "display_name": "Faq Owner",
+        "knowledge_type_key": "faq",
+        "role_key": "owner",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "faq_approver",
+        "display_name": "Faq Approver",
+        "knowledge_type_key": "faq",
+        "role_key": "approver",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "contract_owner",
+        "display_name": "Contract Owner",
+        "knowledge_type_key": "contract",
+        "role_key": "owner",
+        "minimum_count": 1,
+        "requires_human": true
+      },
+      {
+        "key": "contract_approver",
+        "display_name": "Contract Approver",
+        "knowledge_type_key": "contract",
+        "role_key": "approver",
+        "minimum_count": 1,
+        "requires_human": true
+      }
+    ],
+    "catalog.knowledge_template": [
+      {
+        "key": "standard_sop",
+        "display_name": "Standard operating procedure",
+        "knowledge_type_key": "sop",
+        "domain_key": "general_business",
+        "authority_level_key": "approved_standards",
+        "classification_key": "internal",
+        "lifecycle_workflow_key": "standard",
+        "content_sections": [
+          "Purpose",
+          "Scope",
+          "Prerequisites",
+          "Procedure",
+          "Exceptions",
+          "Responsibilities",
+          "Contacts",
+          "Related knowledge"
+        ],
+        "review_requirements": {
+          "review_interval_days": 365
+        }
+      }
+    ],
+    "catalog.template_responsibility": [
+      {
+        "key": "sop_owner",
+        "display_name": "Sop Owner",
+        "knowledge_template_key": "standard_sop",
+        "role_key": "owner"
+      },
+      {
+        "key": "sop_sme",
+        "display_name": "Sop Sme",
+        "knowledge_template_key": "standard_sop",
+        "role_key": "sme"
+      },
+      {
+        "key": "sop_approver",
+        "display_name": "Sop Approver",
+        "knowledge_template_key": "standard_sop",
+        "role_key": "approver"
+      }
+    ],
+    "catalog.template_field": [
+      {
+        "key": "sop_review_date",
+        "display_name": "Sop Review Date",
+        "knowledge_template_key": "standard_sop",
+        "custom_field_definition_key": "review_date"
+      }
+    ]
+  }
+}

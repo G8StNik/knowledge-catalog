@@ -1,0 +1,963 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format_version",
+    "package_key",
+    "version",
+    "entities"
+  ],
+  "properties": {
+    "format_version": {
+      "const": 1
+    },
+    "package_key": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "catalog.domain": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "parent_domain_key": {
+                "type": "string"
+              },
+              "workspace_key": {
+                "type": "string"
+              },
+              "sort_order": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "catalog.taxonomy": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "catalog.taxonomy_term": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "taxonomy_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "taxonomy_key": {
+                "type": "string"
+              },
+              "parent_term_key": {
+                "type": "string"
+              },
+              "sort_order": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "catalog.term_alias": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "taxonomy_term_key",
+              "alias",
+              "alias_kind"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "taxonomy_term_key": {
+                "type": "string"
+              },
+              "alias": {
+                "type": "string"
+              },
+              "language": {
+                "type": "string"
+              },
+              "alias_kind": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "governance.authority_level": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "trust_rank"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "trust_rank": {
+                "type": "integer"
+              },
+              "requires_evidence": {
+                "type": "boolean"
+              },
+              "requires_human_approval": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "governance.classification": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "sensitivity_rank"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "sensitivity_rank": {
+                "type": "integer"
+              },
+              "is_ai_eligible": {
+                "type": "boolean"
+              },
+              "is_external_ai_allowed": {
+                "type": "boolean"
+              },
+              "handling_rules": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "governance.role": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "allowed_principal_types": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "enum": [
+                    "USER",
+                    "GROUP",
+                    "SERVICE",
+                    "AI_AGENT"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "governance.lifecycle_workflow": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "governance.lifecycle_state": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "lifecycle_workflow_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "lifecycle_workflow_key": {
+                "type": "string"
+              },
+              "is_initial": {
+                "type": "boolean"
+              },
+              "is_terminal": {
+                "type": "boolean"
+              },
+              "is_published": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "governance.lifecycle_transition": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "lifecycle_workflow_key",
+              "from_state_key",
+              "to_state_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "lifecycle_workflow_key": {
+                "type": "string"
+              },
+              "from_state_key": {
+                "type": "string"
+              },
+              "to_state_key": {
+                "type": "string"
+              },
+              "approval_role_key": {
+                "type": "string"
+              },
+              "minimum_approvals": {
+                "type": "integer"
+              },
+              "requires_human_approval": {
+                "type": "boolean"
+              },
+              "conditions": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "catalog.knowledge_type": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "default_authority_level_key": {
+                "type": "string"
+              },
+              "default_classification_key": {
+                "type": "string"
+              },
+              "lifecycle_workflow_key": {
+                "type": "string"
+              },
+              "is_ai_eligible_default": {
+                "type": "boolean"
+              },
+              "requires_approval": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "catalog.custom_field_definition": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "data_type"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "data_type": {
+                "type": "string"
+              },
+              "is_required": {
+                "type": "boolean"
+              },
+              "is_searchable": {
+                "type": "boolean"
+              },
+              "is_filterable": {
+                "type": "boolean"
+              },
+              "is_ai_visible": {
+                "type": "boolean"
+              },
+              "validation_schema": {
+                "type": "object"
+              },
+              "conditional_rules": {
+                "type": "object"
+              },
+              "calculation": {
+                "type": "object"
+              },
+              "reference_target_type": {
+                "type": "string"
+              },
+              "default_value": {}
+            }
+          }
+        },
+        "catalog.custom_field_choice": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "custom_field_definition_key",
+              "value"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "custom_field_definition_key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "sort_order": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "catalog.knowledge_type_field": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "knowledge_type_key",
+              "custom_field_definition_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "knowledge_type_key": {
+                "type": "string"
+              },
+              "custom_field_definition_key": {
+                "type": "string"
+              },
+              "is_required": {
+                "type": "boolean"
+              },
+              "sort_order": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "catalog.relationship_type": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "forward_label",
+              "reverse_label"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "forward_label": {
+                "type": "string"
+              },
+              "reverse_label": {
+                "type": "string"
+              },
+              "is_symmetric": {
+                "type": "boolean"
+              },
+              "allows_self_reference": {
+                "type": "boolean"
+              },
+              "requires_evidence": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "catalog.relationship_type_restriction": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "relationship_type_key",
+              "source_knowledge_type_key",
+              "target_knowledge_type_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "relationship_type_key": {
+                "type": "string"
+              },
+              "source_knowledge_type_key": {
+                "type": "string"
+              },
+              "target_knowledge_type_key": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "governance.responsibility_requirement": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "knowledge_type_key",
+              "role_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "knowledge_type_key": {
+                "type": "string"
+              },
+              "role_key": {
+                "type": "string"
+              },
+              "minimum_count": {
+                "type": "integer"
+              },
+              "maximum_count": {
+                "type": "integer"
+              },
+              "requires_human": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "catalog.knowledge_template": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "knowledge_type_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "knowledge_type_key": {
+                "type": "string"
+              },
+              "domain_key": {
+                "type": "string"
+              },
+              "authority_level_key": {
+                "type": "string"
+              },
+              "classification_key": {
+                "type": "string"
+              },
+              "lifecycle_workflow_key": {
+                "type": "string"
+              },
+              "default_metadata": {
+                "type": "object"
+              },
+              "content_sections": {
+                "type": "array"
+              },
+              "review_requirements": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "catalog.template_responsibility": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "knowledge_template_key",
+              "role_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "knowledge_template_key": {
+                "type": "string"
+              },
+              "role_key": {
+                "type": "string"
+              },
+              "minimum_count": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        "catalog.template_field": {
+          "type": "array",
+          "maxItems": 10000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "key",
+              "display_name",
+              "knowledge_template_key",
+              "custom_field_definition_key"
+            ],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "maxLength": 100
+              },
+              "display_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "description": {
+                "type": "string"
+              },
+              "is_enabled": {
+                "type": "boolean"
+              },
+              "metadata": {
+                "type": "object"
+              },
+              "knowledge_template_key": {
+                "type": "string"
+              },
+              "custom_field_definition_key": {
+                "type": "string"
+              },
+              "is_required": {
+                "type": "boolean"
+              },
+              "default_value": {}
+            }
+          }
+        }
+      }
+    }
+  }
+}

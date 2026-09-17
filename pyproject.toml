@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "knowledge-catalog-foundation"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["psycopg[binary]==3.2.10", "jsonschema==4.26.0"]
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+
+[tool.setuptools.packages.find]
+where = ["packages"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["packages"]

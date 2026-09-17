@@ -1,0 +1,40 @@
+name: knowledge-catalog
+services:
+  postgres:
+    image: postgres:17.11
+    environment:
+      POSTGRES_DB: knowledge_catalog
+      POSTGRES_USER: kc_migration
+      POSTGRES_PASSWORD: ${KC_POSTGRES_PASSWORD:?Set KC_POSTGRES_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:${KC_POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - catalog_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kc_migration -d knowledge_catalog"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/tools.Dockerfile
+    environment:
+      KC_MIGRATION_DSN: postgresql://kc_migration:${KC_POSTGRES_PASSWORD}@postgres/knowledge_catalog
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "kc.migrate"]
+  test:
+    profiles: ["test"]
+    build:
+      context: .
+      dockerfile: docker/tools.Dockerfile
+    environment:
+      KC_TEST_ADMIN_DSN: postgresql://kc_migration:${KC_POSTGRES_PASSWORD}@postgres/knowledge_catalog
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    command: ["python", "-m", "pytest", "-q"]
+volumes:
+  catalog_data:
