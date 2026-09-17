@@ -7,7 +7,7 @@ Unlike a traditional document repository or RAG chatbot, Knowledge Catalog maint
 
 ## Foundation: KC-001 through KC-004
 
-This monorepo now contains the company-agnostic architecture and physical model, plus an executable PostgreSQL tenant/identity foundation and governed configuration schema. The product description above describes the target platform; connectors, knowledge-item CRUD, search, retrieval and the user interface are later modules.
+This monorepo contains the company-agnostic architecture and physical model, plus an executable PostgreSQL tenant/identity foundation and governed configuration schema. KC-005 adds the SOP publication workflow described below. The product description above describes the target platform; connectors, search, generative retrieval and the user interface remain later modules.
 
 - [Architecture and product boundaries](docs/architecture.md)
 - [Multi-tenant physical model](docs/physical-model.md)
@@ -28,3 +28,7 @@ docker compose --profile test run --rm test
 ```
 
 See the database guide for native PostgreSQL setup, optional demo tenants, and configuration package import/export.
+
+## KC-005: SOP workflow
+
+The [SOP walkthrough](docs/sop-workflow.md) now implements creating a draft, attaching immutable source evidence, independent human review, publishing version 1, and creating version 2 without modifying published history. It includes workspace/source access checks, a command-line client and integration tests. See the walkthrough for the supported scope and remaining production integrations.

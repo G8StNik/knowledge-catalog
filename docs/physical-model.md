@@ -50,7 +50,7 @@ Advanced field definitions and conditional/calculation/transition rules are repr
 
 ## Physical specification for later knowledge/source modules
 
-These tables are designed here, **not created by KC-003/004 migrations**, following the agreed sequence. Each row below assumes organization_id, UUID primary ID and explicit restrictive tenant-aware FKs.
+These tables were designed here, **not created by KC-003/004 migrations**, following the agreed sequence. KC-005 now implements the knowledge item/version, source/artifact/version, citation, responsibility, review and direct-entitlement subset; see [the implemented SOP slice](sop-workflow.md) for its exact fields and limits. The table below remains the broader target specification. Each row assumes organization_id, UUID primary ID and explicit restrictive tenant-aware FKs.
 
 | Planned table | Principal columns and constraints |
 |---|---|

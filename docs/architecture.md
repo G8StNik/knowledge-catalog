@@ -53,7 +53,7 @@ External content, imported descriptions, model output, and evidence are untruste
 | KC-003 | Executable tenant, identity, session, RLS, migration and audit foundation; local setup and tests |
 | KC-004 | Executable configuration schema, revision governance, proposal approval, package import/export and neutral starter |
 
-The approved KC-003 discussion explicitly defers `catalog.knowledge_item` until the foundation is proven. KC-002 documents that future physical model; KC-004 implements its configuration dependencies. A functioning catalog UI, knowledge CRUD, connector ingestion, retrieval and workflow execution are subsequent modules.
+The approved KC-003 discussion deferred `catalog.knowledge_item` until the foundation was proven. KC-002 documents the broader physical model; KC-004 implements its configuration dependencies. KC-005 now implements the [SOP publication workflow](sop-workflow.md), knowledge/version records and source evidence. A catalog UI, connector ingestion and retrieval remain subsequent modules.
 
 ## Supporting product context
 

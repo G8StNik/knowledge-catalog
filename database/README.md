@@ -56,12 +56,12 @@ Start from an idle connection; commit/rollback clears the context. Ticket validi
 
 | Group role | Purpose |
 |---|---|
-| kc_application | Read tenant foundation/configuration; submit proposals |
+| kc_application | Read tenant foundation/configuration; submit proposals; edit authorized knowledge drafts through workflow commands |
 | kc_ingestion | Read tenant configuration; submit proposals; no activation |
-| kc_readonly | Read tenant-visible foundation/configuration |
+| kc_readonly | Read tenant-visible foundation/configuration and workspace/source-authorized knowledge |
 | kc_ai_agent | Read tenant configuration and own proposal/audit records; submit proposals only |
-| kc_human_approver | Edit authorized draft configuration and invoke approval routines; effective human permission also required |
-| kc_platform_admin | Trusted provisioning, account/membership management, administrative permission grants, ticket issuance/revocation |
+| kc_human_approver | Edit authorized configuration and invoke approval routines; configuration permission or knowledge workspace/role authority is checked for the corresponding operation |
+| kc_platform_admin | Trusted provisioning, account/membership management, administrative permission grants, ticket issuance/revocation, source evidence ingestion and workspace/source entitlements |
 | kc_context_owner | Internal NOLOGIN function owner; never grant membership |
 
 Create distinct production LOGIN roles with `INHERIT` and grant exactly the intended group. No runtime LOGIN may be superuser, table owner, BYPASSRLS, or inherit a privileged group. The migration account is separate and never serves requests. A deployment may use role-specific secrets or workload identity for PostgreSQL connections.
@@ -92,3 +92,7 @@ At read time select approved revisions through activation intervals using `effec
 The runner records checksums in `kc_migrations.history`, refuses altered/missing/out-of-order history, serializes runners with an advisory lock, and rolls back failed migrations. Applied files are immutable; extend with a new numbered SQL migration. Destructive changes require explicit review and backup/recovery planning.
 
 Tests use real PostgreSQL and distinct non-superuser LOGIN connections. They cover missing/forged/cross-login context, pool cleanup, revoked identity, cross-tenant and cross-revision integrity, RLS across configuration tables, group/hierarchy integrity, concurrent cycle prevention, proposal restrictions, human permission, activation/immutability, portable packages and transactional migration recovery. CI rebuilds a fresh database twice.
+
+## SOP publication workflow
+
+Migrations V010–V012 add versioned knowledge and source evidence, independent human review, immutable publication, workspace/source access checks and contributor tracking. See [the full SOP walkthrough](../docs/sop-workflow.md) for commands and scope. To run the focused integration suite, use `python -m pytest tests/test_sop_workflow.py -q` with the same isolated `KC_TEST_ADMIN_DSN`.
