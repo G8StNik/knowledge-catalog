@@ -17,3 +17,6 @@ where = ["packages"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["packages"]
+
+[tool.setuptools.package-data]
+kc = ["web_static/*"]

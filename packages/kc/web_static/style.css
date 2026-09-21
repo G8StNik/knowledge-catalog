@@ -1,0 +1,287 @@
+:root {
+  font-family:
+    Segoe UI,
+    system-ui,
+    sans-serif;
+  color: #203632;
+  background: #f4f6f2;
+  font-size: 15px;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  height: 78px;
+  border-bottom: 1px solid #d9e1d9;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 0 5%;
+  background: #fff;
+}
+.brand {
+  text-decoration: none;
+  color: #154c43;
+  font-size: 23px;
+  font-weight: 650;
+}
+.tag,
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 1.8px;
+  font-weight: 700;
+  color: #56756b;
+}
+#identity {
+  margin-left: auto;
+}
+main {
+  max-width: 1440px;
+  margin: auto;
+  padding: 42px 5%;
+}
+.intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+h1 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 40px;
+  letter-spacing: -1.2px;
+  margin: 12px 0;
+}
+h2 {
+  font-size: 23px;
+  font-weight: 600;
+}
+h3 {
+  font-size: 17px;
+  margin-top: 28px;
+}
+p {
+  line-height: 1.65;
+  color: #5c6d66;
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button {
+  border: 1px solid #b7c8be;
+  border-radius: 7px;
+  padding: 10px 17px;
+  background: #fff;
+  color: #214f42;
+  cursor: pointer;
+}
+button:hover {
+  background: #edf3ef;
+}
+button.primary {
+  background: #205747;
+  border-color: #205747;
+  color: #fff;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 11px;
+  border: 1px solid #c3cfc6;
+  border-radius: 6px;
+  background: #fff;
+  color: #203632;
+  margin-top: 7px;
+}
+textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 13px 0;
+}
+small {
+  color: #64776d;
+}
+.card {
+  background: #fff;
+  border: 1px solid #dce3dc;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 20px #244e3505;
+}
+.signin {
+  max-width: 550px;
+  margin: 50px auto;
+}
+.signin button {
+  margin: 8px 0 20px;
+}
+.toolbar {
+  display: flex;
+  gap: 18px;
+  align-items: end;
+  margin-bottom: 22px;
+}
+.toolbar label:first-child {
+  flex: 1;
+}
+.toolbar label {
+  margin: 0;
+}
+.toolbar button {
+  margin-bottom: 1px;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 310px 1fr;
+  gap: 25px;
+}
+.item {
+  width: 100%;
+  text-align: left;
+  display: block;
+  padding: 20px;
+  margin-bottom: 10px;
+  border: 1px solid #dce3dc;
+  border-radius: 9px;
+  background: #fff;
+}
+.item.active {
+  border-color: #31775d;
+  background: #edf4ef;
+}
+.item strong {
+  display: block;
+  margin: 10px 0;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  background: #eef1ec;
+  color: #526258;
+}
+.badge.IN_REVIEW {
+  background: #fff1d4;
+  color: #8c6416;
+}
+.badge.PUBLISHED {
+  background: #dfefe5;
+  color: #276747;
+}
+.badge.APPROVED {
+  background: #e4ebff;
+  color: #4a5790;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 18px;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+.evidence {
+  background: #f6f8f4;
+  border: 1px solid #e0e6df;
+  padding: 16px;
+  border-radius: 7px;
+  margin: 12px 0;
+}
+.prose {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.muted {
+  font-size: 13px;
+  color: #728076;
+}
+details {
+  margin: 15px 0;
+}
+summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#notice:not(:empty) {
+  padding: 15px;
+  background: #e3eee5;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+#notice.error {
+  background: #fff0e8;
+  color: #873f20;
+}
+footer {
+  padding: 25px 5%;
+  border-top: 1px solid #dce3dc;
+  color: #718277;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid #91bda2;
+  outline-offset: 3px;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 850px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .intro {
+    display: block;
+  }
+  h1 {
+    font-size: 32px;
+  }
+  .tag {
+    display: none;
+  }
+  header {
+    gap: 12px;
+  }
+  .brand {
+    font-size: 17px;
+  }
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  .card {
+    padding: 20px;
+  }
+  main {
+    padding-top: 22px;
+  }
+}

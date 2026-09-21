@@ -7,7 +7,7 @@ Unlike a traditional document repository or RAG chatbot, Knowledge Catalog maint
 
 ## Foundation: KC-001 through KC-004
 
-This monorepo contains the company-agnostic architecture and physical model, plus an executable PostgreSQL tenant/identity foundation and governed configuration schema. KC-005 adds the SOP publication workflow described below. The product description above describes the target platform; connectors, search, generative retrieval and the user interface remain later modules.
+This monorepo contains the company-agnostic architecture and physical model, plus an executable PostgreSQL tenant/identity foundation and governed configuration schema. KC-005 adds the SOP publication workflow described below. The product description above describes the target platform; connectors, search and generative retrieval remain later modules. A local SOP browser workspace is now available.
 
 - [Architecture and product boundaries](docs/architecture.md)
 - [Multi-tenant physical model](docs/physical-model.md)
@@ -32,3 +32,7 @@ See the database guide for native PostgreSQL setup, optional demo tenants, and c
 ## KC-005: SOP workflow
 
 The [SOP walkthrough](docs/sop-workflow.md) now implements creating a draft, attaching immutable source evidence, independent human review, publishing version 1, and creating version 2 without modifying published history. It includes workspace/source access checks, a command-line client and integration tests. See the walkthrough for the supported scope and remaining production integrations.
+
+## SOP browser workspace
+
+The [browser workspace guide](docs/sop-ui.md) covers drafting procedures, attaching source evidence, assigning responsibilities, independent review, publication and version history. Run `python -m kc.web` with a configured `KC_WEB_DSN` and sign in with your individual access ticket. The first release is local-only; production sign-in and hosting remain separate work.

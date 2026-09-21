@@ -89,7 +89,7 @@ The item still points to published version 1. Version 2 must repeat submission/r
 
 ## Current limits
 
-This is a backend/CLI slice, not a UI, source connector, search index or generative assistant. It does not activate AI eligibility, export content to a model, or implement a complete classification-policy engine. Provisioners must apply classification and source restrictions when assigning entitlements. There is no content deletion/purge endpoint.
+This milestone introduced the backend/CLI slice. The [local browser workspace](sop-ui.md) now exposes that workflow. Source connectors, search indexing and generative retrieval remain separate work. It does not activate AI eligibility, export content to a model, or implement a complete classification-policy engine. Provisioners must apply classification and source restrictions when assigning entitlements. There is no content deletion/purge endpoint.
 
 The database validates required/unknown metadata and basic TEXT, RICHTEXT, NUMBER, BOOLEAN, DATE and CHOICE values. Supplied values requiring unsupported field evaluators, nonempty validation-schema/conditional/calculation rules, or workflow conditions block submission/publication rather than being silently ignored. Multi-domain assignment, templates as creation inputs, reference/calculated fields, complex workflows, connectors, evidence replacement and workspace sharing remain subsequent work. Draft creation requires explicit IDs; authority/classification defaults come from the configured knowledge type.
 

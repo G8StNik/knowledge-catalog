@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SOP workspace · Knowledge Catalog</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="/" class="brand">◈ <span>Knowledge Catalog</span></a
+      ><span class="tag">SOP WORKSPACE</span><span id="identity"></span
+      ><button id="logout" hidden>Sign out</button>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">CLARITY IN EVERY STEP</p>
+          <h1>Procedures people can trust.</h1>
+          <p>
+            Build with evidence. Review with care. Keep every published version.
+          </p>
+        </div>
+        <button id="new" class="primary" hidden>+ Create SOP</button>
+      </section>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <section id="login" class="card signin">
+        <p class="eyebrow">YOUR SECURE WORKSPACE</p>
+        <h2>Sign in to your catalog</h2>
+        <p>
+          Use the short-lived access ticket supplied by your administrator. Each
+          author and reviewer signs in with their own identity.
+        </p>
+        <form id="login-form">
+          <label
+            >Access ticket<input
+              name="ticket"
+              type="password"
+              autocomplete="off"
+              required /></label
+          ><button class="primary">Open workspace</button>
+        </form>
+        <small>Access is checked on every request.</small>
+      </section>
+      <section id="workspace" hidden>
+        <div class="toolbar">
+          <label
+            >Find a procedure<input
+              id="search"
+              type="search"
+              placeholder="Search title or SOP number" /></label
+          ><label
+            >Stage<select id="filter">
+              <option value="">All stages</option>
+              <option value="DRAFT">Drafts</option>
+              <option value="IN_REVIEW">Awaiting review</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PUBLISHED">Published</option>
+            </select></label
+          ><button id="refresh">Refresh</button>
+        </div>
+        <div class="layout">
+          <nav id="list" aria-label="SOP versions"></nav>
+          <section id="detail" class="card">
+            <h2>Your procedures, in one place.</h2>
+            <p>
+              Select an SOP to see its content, evidence and history, or create
+              your first draft.
+            </p>
+          </section>
+        </div>
+      </section>
+    </main>
+    <footer>
+      Knowledge Catalog <span>Evidence-led knowledge · Preserved history</span>
+    </footer>
+  </body>
+</html>
