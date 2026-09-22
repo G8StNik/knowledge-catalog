@@ -6,6 +6,8 @@ import json
 import os
 import secrets
 import time
+import hashlib
+from datetime import datetime, timedelta, timezone
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -45,7 +47,7 @@ def snapshot(conn):
             AND a.effective_from<=statement_timestamp() AND (a.effective_to IS NULL OR a.effective_to>statement_timestamp()))'''),
         'domains': rows(conn, 'SELECT domain_id,configuration_revision_id,display_name FROM catalog.domain WHERE is_enabled'),
         'roles': rows(conn, 'SELECT role_id,configuration_revision_id,display_name FROM governance.role WHERE is_enabled'),
-        'people': rows(conn, "SELECT principal_id,display_name FROM identity.principal WHERE principal_type='USER'"),
+        'people': rows(conn, "SELECT principal_id,display_name,status FROM identity.principal WHERE principal_type='USER'"),
         'fields': rows(conn, '''SELECT f.*, b.knowledge_type_id, b.is_required AS binding_required
             FROM catalog.custom_field_definition f JOIN catalog.knowledge_type_field b
             USING(organization_id,configuration_revision_id,custom_field_definition_id) WHERE f.is_enabled AND b.is_enabled'''),
@@ -171,7 +173,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not isinstance(payload, dict):
                     raise ValueError('Expected an object')
             if write and path == '/api/auth/start' and self.server.auth:
-                url, browser = self.server.auth.begin(payload['organization'])
+                url, browser = self.server.auth.begin(payload['organization'], payload.get('invitation') or None)
                 return self.respond(200, {'url': url}, cookie=f'kc_login={browser}; HttpOnly; SameSite=Lax; Path=/auth/callback; Max-Age=300')
             if write and self.path == '/api/login' and not self.server.auth:
                 ticket = payload['ticket']
@@ -214,6 +216,20 @@ class Handler(BaseHTTPRequestHandler):
                         conn.execute('SELECT source.set_access(%s,%s,%s,%s)',
                                      (UUID(payload['artifact_id']), UUID(payload['principal_id']),
                                       payload['allowed'], uuid7()))
+                        result = {'ok': True}
+                    elif not write and path == '/api/organization/invitations':
+                        result = {'invitations': rows(conn, 'SELECT * FROM identity.list_invitations()')}
+                    elif write and path == '/api/organization/invite':
+                        if not isinstance(payload['can_edit'], bool) or not isinstance(payload['can_review'], bool):
+                            raise ValueError('Workspace permissions must be true or false')
+                        code = secrets.token_urlsafe(48)
+                        conn.execute('SELECT identity.create_invitation(%s,%s,%s,%s,%s,%s,%s,%s)', (
+                            uuid7(), hashlib.sha256(code.encode()).digest(), payload['email'],
+                            UUID(payload['workspace_id']), payload['can_edit'], payload['can_review'],
+                            datetime.now(timezone.utc) + timedelta(days=7), uuid7()))
+                        result = {'invitation_code': code}
+                    elif write and path == '/api/organization/revoke':
+                        conn.execute('SELECT identity.revoke_invitation(%s,%s)', (UUID(payload['invitation_id']), uuid7()))
                         result = {'ok': True}
                     elif write and self.path.startswith('/api/action/'):
                         result = {'version_id': dispatch(conn, self.path.rsplit('/', 1)[-1], payload)}

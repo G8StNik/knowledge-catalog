@@ -76,6 +76,8 @@ Copy the actual full User ID; federated accounts can use a different prefix. `KC
 
 This command does not create memberships, roles or source access. Provision those through the existing administrative setup. A newly registered Auth0 user has no catalog access until explicitly mapped. Do not link accounts just because their email addresses match. Multiple separately verified Auth0 subjects can be mapped to the same catalog principal; account merging/recovery inside Auth0 requires its own verified process. No automatic account linking is enabled.
 
+For a new organization, the [onboarding command and invitation flow](organization-onboarding.md) now create the first administrator and subsequent members. Invitation acceptance requires the one-time code, MFA and an exact verified email match; ordinary sign-in still requires an existing exact external identity link.
+
 ## 5. Start the app
 
 Set these variables in the server process environment:

@@ -42,6 +42,7 @@ function clearSession() {
   selected = null;
   selectedSource = null;
   view = "procedures";
+  $("#people-tab").hidden = true;
   $("#workspace").hidden = true;
   $("#login").hidden = false;
   $("#new").hidden = true;
@@ -94,6 +95,14 @@ function role(id) {
 }
 async function load(id = selected) {
   data = await api("workspace");
+  try {
+    data.invitations = (await api("organization/invitations")).invitations;
+    $("#people-tab").hidden = false;
+  } catch {
+    data.invitations = null;
+    $("#people-tab").hidden = true;
+    if (view === "people") view = "procedures";
+  }
   $("#login").hidden = true;
   $("#workspace").hidden = false;
   $("#new").hidden = false;
@@ -103,6 +112,7 @@ async function load(id = selected) {
   selected = id;
   dirty = false;
   setView(view);
+  if (view === "people") return peopleDetail();
   if (view === "sources") {
     if (selectedSource) await sourceDetail(selectedSource);
     else sourceWelcome();
@@ -118,6 +128,7 @@ async function load(id = selected) {
   }
 }
 function list() {
+  if (view === "people") return invitationList();
   if (view === "sources") return sourceList();
   const term = $("#search").value.toLowerCase(),
     status = $("#filter").value;
@@ -145,14 +156,46 @@ function list() {
 function setView(next) {
   if (view !== next) $("#search").value = "";
   view = next;
-  for (const [name, button] of [["procedures", "#procedures-tab"], ["sources", "#sources-tab"]]) {
+  for (const [name, button] of [["procedures", "#procedures-tab"], ["sources", "#sources-tab"], ["people", "#people-tab"]]) {
     $(button).classList.toggle("active", name === view);
     $(button).setAttribute("aria-pressed", String(name === view));
   }
-  $("#stage-filter").hidden = view === "sources";
-  $("#search-label").textContent = view === "sources" ? "Find a source" : "Find a procedure";
-  $("#search").placeholder = view === "sources" ? "Search document name, number or text" : "Search title or SOP number";
+  $("#stage-filter").hidden = view !== "procedures";
+  $("#search-label").textContent = view === "sources" ? "Find a source" : view === "people" ? "Find an invitation" : "Find a procedure";
+  $("#search").placeholder = view === "sources" ? "Search document name, number or text" : view === "people" ? "Search email or status" : "Search title or SOP number";
   list();
+}
+function invitationList() {
+  const term = $("#search").value.toLowerCase();
+  $("#list").innerHTML = (data.invitations || []).filter((i) => `${i.email} ${i.status}`.toLowerCase().includes(term))
+    .map((i) => `<div class="item"><small>${esc(i.status)} · Expires ${esc(new Date(i.expires_at).toLocaleDateString())}</small><strong>${esc(i.email)}</strong><small>${i.can_edit ? "Can edit" : "Can read"}${i.can_review ? " · Can review" : ""}</small>${i.status === "PENDING" ? `<button data-revoke="${i.invitation_id}">Revoke invitation</button>` : ""}</div>`).join("") || "<p>No invitations match this view.</p>";
+  $("#list").querySelectorAll("[data-revoke]").forEach((button) => button.onclick = safe(async () => {
+    await api("organization/revoke", {invitation_id: button.dataset.revoke});
+    await load();
+    notice("Invitation revoked.");
+  }));
+}
+function peopleDetail() {
+  $("#detail").innerHTML = `<p class="eyebrow">ORGANIZATION ONBOARDING</p><h2>Invite a person</h2><p>Create a one-time code for someone who should join this organization. Share it with the intended person through your normal trusted channel. The code expires after seven days and is shown only once.</p><form id="invite-form"><label>Email address<input name="email" type="email" autocomplete="off" required></label><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><fieldset><legend>Workspace permissions</legend><label><input class="inline" type="checkbox" name="can_edit"> Can create and edit procedures and sources</label><label><input class="inline" type="checkbox" name="can_review"> Can review and publish procedures</label></fieldset><button class="primary" ${data.workspaces.length ? "" : "disabled"}>Create invitation</button></form><div id="invitation-result"></div><h3>Current members</h3>${data.people.map((person) => `<p>${esc(person.display_name)} · ${esc(person.status)}</p>`).join("") || "<p>No members yet.</p>"}`;
+  watch();
+  $("#invite-form").onsubmit = safe(async () => {
+    const form = $("#invite-form");
+    const result = await api("organization/invite", {
+      email: form.elements.email.value.trim(), workspace_id: form.elements.workspace_id.value,
+      can_edit: form.elements.can_edit.checked, can_review: form.elements.can_review.checked,
+    });
+    const code = result.invitation_code;
+    $("#invitation-result").innerHTML = `<h3>Invitation created</h3><p>Share this code privately. It will not be shown again.</p><label>One-time invitation code<input id="invitation-code" readonly></label><button id="copy-invitation">Copy code</button>`;
+    $("#invitation-code").value = code;
+    $("#copy-invitation").onclick = safe(async () => {
+      await navigator.clipboard.writeText(code);
+      notice("Invitation code copied.");
+    });
+    data.invitations = (await api("organization/invitations")).invitations;
+    invitationList();
+    form.reset();
+    notice("Invitation created. Share the code with the intended person.");
+  });
 }
 function sourceDocuments() {
   const documents = new Map();
@@ -550,6 +593,9 @@ $("#procedures-tab").onclick = () => {
 $("#sources-tab").onclick = () => {
   if (leave()) { setView("sources"); selectedSource ? sourceDetail(selectedSource) : sourceWelcome(); }
 };
+$("#people-tab").onclick = () => {
+  if (leave()) { setView("people"); peopleDetail(); }
+};
 $("#search").oninput = list;
 $("#filter").onchange = list;
 $("#refresh").onclick = safe(() => {
@@ -561,6 +607,7 @@ $("#auth0-form").onsubmit = safe(async () => {
   try {
     const result = await api("auth/start", {
       organization: $("[name=organization]").value.trim(),
+      invitation: $("[name=invitation]").value.trim() || undefined,
     });
     window.location.assign(result.url);
   } finally {

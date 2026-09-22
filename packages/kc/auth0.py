@@ -59,9 +59,11 @@ class Auth0:
         self.pending = {}
         self.lock = threading.Lock()
 
-    def begin(self, organization):
+    def begin(self, organization, invitation=None):
         if not isinstance(organization, str) or not 1 <= len(organization) <= 200:
             raise ValueError('Enter your organization code')
+        if invitation is not None and (not isinstance(invitation, str) or not re.fullmatch(r'[A-Za-z0-9_-]{40,128}', invitation)):
+            raise ValueError('Invalid invitation code')
         state, browser, nonce, verifier = (secrets.token_urlsafe(48) for _ in range(4))
         with self.lock:
             now = time.monotonic()
@@ -69,7 +71,7 @@ class Auth0:
             if len(self.pending) >= 1000:
                 raise PermissionError('Sign-in is busy. Please try again shortly.')
             self.pending[state] = dict(browser=browser, nonce=nonce, verifier=verifier,
-                                       organization=organization, expires=now + 300)
+                                       organization=organization, invitation=invitation, expires=now + 300)
         challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
         url = self.settings.issuer + 'authorize?' + urlencode(dict(
             response_type='code', client_id=self.settings.client_id,
@@ -122,9 +124,18 @@ class Auth0:
             raise PermissionError('Sign-in expired. Please try again.')
         ticket = secrets.token_urlsafe(48)
         with psycopg.connect(self.settings.broker_dsn) as conn:
-            conn.execute('SELECT security.issue_identity_ticket(%s,%s,%s,%s,%s,%s,%s)', (
-                hashlib.sha256(ticket.encode()).digest(), flow['organization'], self.settings.issuer,
-                claims['sub'], self.audience, datetime.now(timezone.utc) + timedelta(seconds=seconds), uuid7()))
+            if flow['invitation']:
+                if claims.get('email_verified') is not True or not isinstance(claims.get('email'), str):
+                    raise PermissionError('Invitation requires a verified email in Auth0.')
+                conn.execute('SELECT security.accept_identity_invitation(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', (
+                    hashlib.sha256(flow['invitation'].encode()).digest(), flow['organization'], self.settings.issuer,
+                    claims['sub'], claims['email'], claims.get('name') or claims['email'], self.audience,
+                    datetime.now(timezone.utc) + timedelta(seconds=seconds), hashlib.sha256(ticket.encode()).digest(),
+                    uuid7(), uuid7(), uuid7(), uuid7(), uuid7()))
+            else:
+                conn.execute('SELECT security.issue_identity_ticket(%s,%s,%s,%s,%s,%s,%s)', (
+                    hashlib.sha256(ticket.encode()).digest(), flow['organization'], self.settings.issuer,
+                    claims['sub'], self.audience, datetime.now(timezone.utc) + timedelta(seconds=seconds), uuid7()))
         return ticket, seconds
 
     def revoke(self, ticket):

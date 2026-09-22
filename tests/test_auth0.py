@@ -135,6 +135,39 @@ def test_complete_callback_issues_ticket_once(auth, database, tenant, broker):
     with pytest.raises(PermissionError): adapter.finish(state,cookie,'one-time-code')
 
 
+def test_verified_email_and_invitation_code_create_membership(auth, database, tenant, connect, broker):
+    adapter, sign = auth
+    with psycopg.connect(database[0]) as conn:
+        conn.execute('INSERT INTO security.organization_admin VALUES(%s,%s)', (tenant['id'], tenant['human']))
+    admin = connect(tenant)
+    code = secrets.token_urlsafe(48)
+    admin.execute('SELECT identity.create_invitation(%s,%s,%s,%s,%s,%s,%s,%s)',
+                  (uuid7(),hashlib.sha256(code.encode()).digest(),'new@example.test',tenant['workspace'],
+                   False,True,datetime.now(timezone.utc)+timedelta(days=1),uuid7()))
+    admin.commit()
+    adapter.settings = Auth0Settings('example.auth0.com','test-client','test-secret',broker)
+    adapter.audience = database[1]['human']
+    url, cookie = adapter.begin(str(tenant['id']), code)
+    state = parse_qs(urlsplit(url).query)['state'][0]
+    nonce = adapter.pending[state]['nonce']
+    adapter.exchange = lambda *_: sign(nonce=nonce, sub='auth0|invited', email='new@example.test', email_verified=False)
+    with pytest.raises(PermissionError): adapter.finish(state,cookie,'code')
+    url, cookie = adapter.begin(str(tenant['id']), code)
+    state = parse_qs(urlsplit(url).query)['state'][0]
+    nonce = adapter.pending[state]['nonce']
+    adapter.exchange = lambda *_: sign(nonce=nonce, sub='auth0|invited', email='new@example.test',
+                                       email_verified=True, name='Invited Reviewer')
+    ticket, _ = adapter.finish(state,cookie,'code')
+    with psycopg.connect(make_conninfo(database[0],user=database[1]['human'],password='kc-test-only')) as conn:
+        with tenant_transaction(conn,ticket):
+            principal=conn.execute('SELECT security.current_principal()').fetchone()[0]
+            assert principal != tenant['human']
+            assert conn.execute('SELECT security.has_workspace_access(%s,\'review\')',(tenant['workspace'],)).fetchone()[0]
+    with psycopg.connect(database[0]) as conn:
+        assert conn.execute('SELECT status FROM identity.invitation WHERE token_hash=%s',
+                            (hashlib.sha256(code.encode()).digest(),)).fetchone()[0] == 'ACCEPTED'
+
+
 def test_http_auth0_callback_cookie_logout_and_no_ticket_bypass(auth, database, tenant, broker):
     import json
     import threading

@@ -245,6 +245,9 @@ def test_other_tenant_tables_fail_closed(database,tenant,tenant_factory,connect)
             AND table_name<>'session_ticket'""").fetchall()
     for schema,table in tables:
         identifier=sql.Identifier(schema,table)
+        if (schema,table) in {('security','organization_admin'),('identity','invitation')}:
+            denied(conn,sql.SQL('SELECT count(*) FROM {}').format(identifier),(),psycopg.errors.InsufficientPrivilege)
+            continue
         assert conn.execute(sql.SQL('SELECT count(*) FROM {} WHERE organization_id=%s').format(identifier),(other['id'],)).fetchone()[0]==0
         statement=sql.SQL('DELETE FROM {} WHERE organization_id=%s').format(identifier)
         if schema+'.'+table in TABLES:

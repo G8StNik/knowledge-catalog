@@ -124,6 +124,28 @@ def test_source_library_access_changes_visibility_and_protects_owner(web):
     assert author('/api/source/access', {'artifact_id': artifact, 'principal_id': str(s['tenant']['human']), 'allowed': False})[0] == 409
 
 
+def test_organization_admin_can_create_list_and_revoke_invitation(web, database):
+    import psycopg
+    s, server, client = web
+    with psycopg.connect(database[0]) as conn:
+        conn.execute('INSERT INTO security.organization_admin VALUES(%s,%s)',
+                     (s['tenant']['id'],s['tenant']['human']))
+    admin = client(s['tenant']['tickets']['human'])
+    reviewer = client(s['reviewer_ticket'])
+    assert reviewer('/api/organization/invitations')[0] == 403
+    status, created = admin('/api/organization/invite', dict(email='new.person@example.test',
+        workspace_id=str(s['tenant']['workspace']),can_edit=True,can_review=False))
+    assert status == 200 and len(created['invitation_code']) >= 40
+    status, listed = admin('/api/organization/invitations')
+    assert status == 200 and len(listed['invitations']) == 1
+    assert 'invitation_code' not in str(listed)
+    invite = listed['invitations'][0]
+    assert invite['email'] == 'new.person@example.test' and invite['status'] == 'PENDING'
+    assert reviewer('/api/organization/revoke', {'invitation_id': invite['invitation_id']})[0] == 403
+    assert admin('/api/organization/revoke', {'invitation_id': invite['invitation_id']})[0] == 200
+    assert admin('/api/organization/invitations')[1]['invitations'][0]['status'] == 'REVOKED'
+
+
 def test_web_auth_origin_logout_and_static(web):
     s, server, client = web
     anonymous = client()
@@ -161,4 +183,22 @@ def test_browser_workflow(web):
     result = subprocess.run([node, str(Path(__file__).with_name('browser_smoke.cjs'))], input=json.dumps({
         'origin': server.origin, 'author': s['tenant']['tickets']['human'], 'reviewer': s['reviewer_ticket']}),
         text=True, capture_output=True, timeout=90)
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_invitation_browser_flow(web, database):
+    import os
+    import subprocess
+    import psycopg
+    from pathlib import Path
+    node = os.environ.get('KC_BROWSER_NODE')
+    if not node:
+        pytest.skip('Set KC_BROWSER_NODE and NODE_PATH to run the optional Edge browser test')
+    s, server, client = web
+    with psycopg.connect(database[0]) as conn:
+        conn.execute('INSERT INTO security.organization_admin VALUES(%s,%s)',
+                     (s['tenant']['id'],s['tenant']['human']))
+    result = subprocess.run([node,str(Path(__file__).with_name('invitation_browser.cjs'))],
+        input=json.dumps({'origin':server.origin,'ticket':s['tenant']['tickets']['human']}),
+        text=True,capture_output=True,timeout=90)
     assert result.returncode == 0, result.stdout + result.stderr
