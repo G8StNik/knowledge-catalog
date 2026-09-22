@@ -22,11 +22,12 @@ Use the [Auth0 setup guide](auth0-setup.md) for normal sign-in with mandatory MF
 
 ## User flow
 
-1. Select **Create SOP**, choose an authorized workspace, configured knowledge type and domain, then fill in the procedure and metadata. The SOP type is selected by default when available.
-2. Save the draft. Attach one or more existing source versions with a section/location and evidence note. Assign the required owner and approver responsibilities.
-3. Select **Submit for review**. Required fields, evidence, responsibilities and effective configuration are enforced by the database. Submitted content is frozen.
-4. An independently authorized reviewer opens the SOP and expands its source evidence, records a review note and selects **Approve this version**. The database rejects contributor self-approval even if the button is visible.
-5. Select **Publish version**. The published record is read-only. **Create revision** creates a new draft; the version history continues to identify the current publication.
+1. Select **Upload source** to add PDF, text or Markdown evidence, or to add a new immutable version of an existing document. Choose its workspace, human owner, governed classification and readers. See [Source document uploads](source-uploads.md).
+2. Select **Create SOP**, choose an authorized workspace, configured knowledge type and domain, then fill in the procedure and metadata. The SOP type is selected by default when available.
+3. Save the draft. Attach one or more accessible source versions with a section/location and evidence note. Assign the required owner and approver responsibilities.
+4. Select **Submit for review**. Required fields, evidence, responsibilities and effective configuration are enforced by the database. Submitted content is frozen.
+5. An independently authorized reviewer opens the SOP and expands its source evidence, records a review note and selects **Approve this version**. The database rejects contributor self-approval even if the button is visible.
+6. Select **Publish version**. The published record is read-only. **Create revision** creates a new draft; the version history continues to identify the current publication.
 
 Search and stage filters help locate versions. Version history opens the exact historical content, citations and reviews. Forms escape stored text rather than rendering source HTML. A failed action leaves the form intact. The UI uses the standard starter workflow transition keys; custom workflow mappings remain available through the CLI.
 
@@ -34,10 +35,10 @@ Search and stage filters help locate versions. Version history opens the exact h
 
 This is a local browser application, not an internet deployment. It uses Python's standard HTTP server to avoid adding an application framework to the foundation. It must not be exposed through a tunnel or reverse proxy. A production rollout needs a supported web server, HTTPS, a live configured Auth0 tenant, distributed session management, rate limits, pagination and operational monitoring. It currently loads all records visible to the actor in one workspace response and is intended for small local catalogs.
 
-Evidence ingestion, source permission provisioning and configuration activation remain trusted administrative operations. The UI attaches existing evidence; it cannot upload a document and declare it authoritative, grant permissions, or activate AI proposals. Custom metadata supports the existing database field evaluators; unsupported extended rules remain blocked by the database. Drafts have no collaborative merge or autosave; use one editor per draft and save explicitly.
+Configuration activation remains a trusted administrative operation. A workspace editor can upload a source and grant its read access only to people who already belong to that workspace. Classification and access do not make a source authoritative; an SOP reviewer still evaluates the exact cited version. The UI cannot activate AI proposals. Custom metadata supports the existing database field evaluators; unsupported extended rules remain blocked by the database. Drafts have no collaborative merge or autosave; use one editor per draft and save explicitly.
 
 ## Validation
 
 `python -m pytest` includes real HTTP/database tests for the full lifecycle, authentication, cross-site request rejection, logout, source revocation and published-history preservation. Browser testing is optional: set `KC_BROWSER_NODE` to a Node executable and `NODE_PATH` to a directory containing Playwright, with Microsoft Edge installed, then run `python -m pytest tests/test_web.py`. The browser test drives the full create/evidence/responsibility/review/publish/revise sequence and checks desktop and mobile layouts using synthetic evidence and test identities. It never approves a real organizational SOP.
 
-On September 21, 2026, all **46 tests passed** against PostgreSQL 17.11 in 74.24 seconds, including the real Edge browser workflow. Desktop (1440 px) and mobile (390 px) screenshots were inspected; the mobile check found no horizontal overflow. Existing migrations were not changed. Git whitespace validation passed.
+The suite rebuilds a fresh PostgreSQL database and verifies the server boundary, source access, immutable versions and the full SOP lifecycle. The optional Edge run additionally exercises source upload, evidence attachment, independent review, publication and revision at desktop and mobile sizes.

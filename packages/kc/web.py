@@ -1,5 +1,7 @@
 """Local SOP workspace with Auth0 MFA sign-in or explicit development ticket mode."""
 import argparse
+import base64
+import binascii
 import json
 import os
 import secrets
@@ -15,7 +17,7 @@ import jwt
 
 import psycopg
 
-from kc import knowledge
+from kc import knowledge, sources
 from kc.session import tenant_transaction
 from kc.auth0 import Auth0, Auth0Settings
 
@@ -30,7 +32,7 @@ def rows(conn, query, args=()):
 def snapshot(conn):
     """Every query runs under the caller's transaction-scoped RLS context."""
     return {
-        'actor': rows(conn, 'SELECT p.display_name FROM identity.principal p WHERE principal_id=security.current_principal()')[0],
+        'actor': rows(conn, 'SELECT p.principal_id,p.display_name FROM identity.principal p WHERE principal_id=security.current_principal()')[0],
         'versions': rows(conn, '''SELECT v.*, i.knowledge_key, i.current_version_id,
             security.has_workspace_access(i.owning_workspace_id,'edit') AS can_edit,
             security.has_workspace_access(i.owning_workspace_id,'review') AS can_review
@@ -47,7 +49,12 @@ def snapshot(conn):
             FROM catalog.custom_field_definition f JOIN catalog.knowledge_type_field b
             USING(organization_id,configuration_revision_id,custom_field_definition_id) WHERE f.is_enabled AND b.is_enabled'''),
         'choices': rows(conn, 'SELECT custom_field_definition_id,value,display_name FROM catalog.custom_field_choice WHERE is_enabled'),
-        'evidence': rows(conn, '''SELECT v.*, a.external_key, a.source_uri FROM source.artifact_version v
+        'classifications': rows(conn, 'SELECT classification_id,configuration_revision_id,display_name FROM governance.classification WHERE is_enabled'),
+        'evidence': rows(conn, '''SELECT v.artifact_version_id,v.organization_id,v.source_artifact_id,
+            v.version_key,v.content,v.content_hash,v.captured_at,v.file_name,v.media_type,
+            v.original_content_hash,v.uploaded_by,v.effective_from,v.effective_to,
+            a.external_key,a.source_uri,a.title,a.owning_workspace_id,a.owner_principal_id,
+            a.classification_id,a.configuration_revision_id FROM source.artifact_version v
             JOIN source.source_artifact a USING(organization_id,source_artifact_id) ORDER BY captured_at DESC'''),
         'citations': rows(conn, 'SELECT * FROM catalog.citation'),
         'responsibilities': rows(conn, 'SELECT * FROM governance.knowledge_responsibility'),
@@ -156,8 +163,9 @@ class Handler(BaseHTTPRequestHandler):
                 if self.headers.get('Origin') != self.server.origin or self.headers.get('Content-Type') != 'application/json':
                     return self.respond(403, {'error': 'Invalid request origin or content type'})
                 size = int(self.headers.get('Content-Length', '0'))
-                if size < 1 or size > 1024 * 1024:
-                    return self.respond(413, {'error': 'Request must be smaller than 1 MB'})
+                maximum = 14 * 1024 * 1024 if path == '/api/source/upload' else 1024 * 1024
+                if size < 1 or size > maximum:
+                    return self.respond(413, {'error': 'Request is too large'})
                 payload = json.loads(self.rfile.read(size))
                 if not isinstance(payload, dict):
                     raise ValueError('Expected an object')
@@ -190,6 +198,12 @@ class Handler(BaseHTTPRequestHandler):
                 with tenant_transaction(conn, session['ticket']):
                     if not write and self.path == '/api/workspace':
                         result = snapshot(conn)
+                    elif write and path == '/api/source/upload':
+                        try:
+                            content = base64.b64decode(payload.pop('content_base64'), validate=True)
+                        except (binascii.Error, KeyError):
+                            raise ValueError('Invalid file')
+                        result = {'artifact_version_id': sources.upload(conn, content=content, **payload)}
                     elif write and self.path.startswith('/api/action/'):
                         result = {'version_id': dispatch(conn, self.path.rsplit('/', 1)[-1], payload)}
                     else:

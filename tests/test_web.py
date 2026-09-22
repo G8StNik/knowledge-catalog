@@ -1,5 +1,6 @@
 """Exercise the real HTTP boundary and database policies together."""
 import json
+import base64
 import threading
 import urllib.error
 import urllib.request
@@ -71,6 +72,30 @@ def test_web_full_sop_history(web):
     state = author('/api/workspace')[1]
     assert next(v for v in state['versions'] if v['knowledge_version_id'] == version) == old
     assert len(state['reviews']) == 1
+
+
+def test_web_uploads_versioned_source_without_exposing_original_bytes(web):
+    s, server, client = web
+    author = client(s['tenant']['tickets']['human'])
+    state = author('/api/workspace')[1]
+    classification = next(c for c in state['classifications'] if c['configuration_revision_id'] == str(s['revision']))
+    common = dict(workspace_id=str(s['tenant']['workspace']), configuration_revision_id=str(s['revision']),
+                  classification_id=classification['classification_id'], document_key='POL-101',
+                  title='Request verification policy', owner_principal_id=str(s['tenant']['human']),
+                  principal_ids=[str(s['reviewer_id'])], file_name='verification.md', media_type='text/markdown')
+    status, first = author('/api/source/upload', {**common, 'content_base64': base64.b64encode(b'# Verification\nConfirm the owner.').decode()})
+    assert status == 200, first
+    current = author('/api/workspace')[1]
+    uploaded = next(e for e in current['evidence'] if e['artifact_version_id'] == first['artifact_version_id'])
+    assert uploaded['version_key'] == '1' and uploaded['title'] == common['title']
+    assert uploaded['original_content_hash'] and 'original_content' not in uploaded
+    status, second = author('/api/source/upload', {**common, 'source_artifact_id': uploaded['source_artifact_id'],
+        'content_base64': base64.b64encode(b'# Verification\nConfirm the owner and record approval.').decode()})
+    assert status == 200, second
+    versions = [e for e in author('/api/workspace')[1]['evidence'] if e['source_artifact_id'] == uploaded['source_artifact_id']]
+    assert {e['version_key'] for e in versions} == {'1', '2'}
+    reviewer_state = client(s['reviewer_ticket'])('/api/workspace')[1]
+    assert len([e for e in reviewer_state['evidence'] if e['source_artifact_id'] == uploaded['source_artifact_id']]) == 2
 
 
 def test_web_auth_origin_logout_and_static(web):

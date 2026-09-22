@@ -41,6 +41,7 @@ function clearSession() {
   $("#workspace").hidden = true;
   $("#login").hidden = false;
   $("#new").hidden = true;
+  $("#upload-source").hidden = true;
   $("#logout").hidden = true;
   $("#identity").textContent = "";
   $("#list").replaceChildren();
@@ -92,6 +93,7 @@ async function load(id = selected) {
   $("#login").hidden = true;
   $("#workspace").hidden = false;
   $("#new").hidden = false;
+  $("#upload-source").hidden = false;
   $("#logout").hidden = false;
   $("#identity").textContent = data.actor.display_name;
   selected = id;
@@ -253,6 +255,57 @@ function create() {
     await act("create", p);
   });
 }
+function uploadSource() {
+  if (!leave()) return;
+  selected = null;
+  dirty = false;
+  list();
+  const documents = [...new Map(data.evidence.filter((e) => e.owning_workspace_id).map((e) => [e.source_artifact_id, e])).values()];
+  const revision = data.types.find((t) => t.key === "sop")?.configuration_revision_id || data.types[0]?.configuration_revision_id;
+  $("#detail").innerHTML = `<p class="eyebrow">TRUSTED SOURCE EVIDENCE</p><h2>Upload a source document</h2><p>The original file and extracted text are preserved as an immutable version. PDF, text, and Markdown files up to 10 MB are supported.</p><form id="source-form"><label>Existing document <select name="source_artifact_id"><option value="">Create a new document</option>${documents.map((d) => `<option value="${d.source_artifact_id}">${esc(d.title)} · Latest version ${esc(d.version_key)}</option>`).join("")}</select></label><div id="new-source-fields"><div class="grid"><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><label>Document number<input name="document_key" placeholder="POLICY-001" required></label></div><label>Document name<input name="title" placeholder="Information handling policy" required></label><div class="grid"><label>Owner<select name="owner_principal_id" required>${options(data.people, "principal_id", "display_name", data.actor.principal_id)}</select></label><label>Classification<select name="classification_id" required>${options(data.classifications.filter((c) => c.configuration_revision_id === revision), "classification_id", "display_name")}</select></label></div></div><div class="grid"><label>Effective date<input name="effective_from" type="date"></label><label>End date<input name="effective_to" type="date"></label></div><label>File<input name="file" type="file" accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf" required></label><fieldset><legend>Give access</legend><p class="muted">The uploader is always granted access. Select other workspace members who may read and cite every version of this source.</p>${data.people.map((p) => `<label><input class="inline" type="checkbox" name="principal_ids" value="${p.principal_id}"> ${esc(p.display_name)}</label>`).join("")}</fieldset><button class="primary">Upload immutable version</button></form>`;
+  const existing = $("[name=source_artifact_id]");
+  const newFields = $("#new-source-fields");
+  const updateMode = () => {
+    const doc = documents.find((d) => d.source_artifact_id === existing.value);
+    newFields.hidden = !!doc;
+    newFields.querySelectorAll("input,select").forEach((el) => (el.required = !doc));
+  };
+  existing.onchange = updateMode;
+  updateMode();
+  watch();
+  $("#source-form").onsubmit = safe(async () => {
+    const form = $("#source-form");
+    const values = Object.fromEntries(new FormData(form));
+    const file = form.elements.file.files[0];
+    if (!file || file.size > 10 * 1024 * 1024) throw Error("Choose a file no larger than 10 MB.");
+    const media = file.type || ({ pdf: "application/pdf", md: "text/markdown", txt: "text/plain" }[file.name.split(".").pop().toLowerCase()]);
+    if (!["application/pdf", "text/plain", "text/markdown"].includes(media)) throw Error("Choose a PDF, text, or Markdown file.");
+    const doc = documents.find((d) => d.source_artifact_id === values.source_artifact_id);
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 32768) binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+    const payload = {
+      workspace_id: doc?.owning_workspace_id || values.workspace_id,
+      configuration_revision_id: doc?.configuration_revision_id || revision,
+      classification_id: doc?.classification_id || values.classification_id,
+      document_key: doc?.external_key || values.document_key,
+      title: doc?.title || values.title,
+      owner_principal_id: doc?.owner_principal_id || values.owner_principal_id,
+      source_artifact_id: values.source_artifact_id || undefined,
+      effective_from: values.effective_from || undefined,
+      effective_to: values.effective_to || undefined,
+      principal_ids: [...form.querySelectorAll('[name=principal_ids]:checked')].map((x) => x.value),
+      file_name: file.name,
+      media_type: media,
+      content_base64: btoa(binary),
+    };
+    notice("Uploading and extracting text…");
+    await api("source/upload", payload);
+    dirty = false;
+    await load();
+    notice("Source version uploaded. It is available as SOP evidence.");
+  });
+}
 function detail(id) {
   selected = id;
   dirty = false;
@@ -386,6 +439,7 @@ $("#logout").onclick = safe(async () => {
   $("#workspace").hidden = true;
   $("#login").hidden = false;
   $("#new").hidden = true;
+  $("#upload-source").hidden = true;
   $("#logout").hidden = true;
   $("#identity").textContent = "";
   $("#list").replaceChildren();
@@ -393,6 +447,7 @@ $("#logout").onclick = safe(async () => {
   notice("Signed out.");
 });
 $("#new").onclick = create;
+$("#upload-source").onclick = uploadSource;
 $("#search").oninput = list;
 $("#filter").onchange = list;
 $("#refresh").onclick = safe(() => {

@@ -32,7 +32,7 @@ def sop(database,tenant,connect):
         for actor in (tenant['human'],reviewer):
             admin.execute('INSERT INTO security.workspace_access VALUES(%s,%s,%s,true,true)',(tenant['id'],tenant['workspace'],actor))
         admin.execute("INSERT INTO source.knowledge_source VALUES(%s,%s,'manual','Controlled source','manual')",(source,tenant['id']))
-        admin.execute("INSERT INTO source.source_artifact VALUES(%s,%s,%s,'onboarding','urn:example:approved-onboarding')",(artifact,tenant['id'],source))
+        admin.execute("INSERT INTO source.source_artifact(source_artifact_id,organization_id,knowledge_source_id,external_key,source_uri,title) VALUES(%s,%s,%s,'onboarding','urn:example:approved-onboarding','Approved onboarding source')",(artifact,tenant['id'],source))
         admin.execute("INSERT INTO source.artifact_version(artifact_version_id,organization_id,source_artifact_id,version_key,content) VALUES(%s,%s,%s,'1','Verify the request, confirm the owner, record approval, and retain the evidence.')",(evidence,tenant['id'],artifact))
         for actor in (tenant['human'],reviewer):
             admin.execute("INSERT INTO security.source_acl VALUES(%s,%s,%s,true,now()+interval '1 day')",(tenant['id'],artifact,actor))

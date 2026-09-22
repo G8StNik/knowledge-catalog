@@ -16,6 +16,17 @@ process.stdin.on("end", async () => {
     await page.goto(config.origin);
     await page.getByLabel("Access ticket").fill(config.author);
     await page.getByRole("button", { name: "Open workspace" }).click();
+    await page.getByRole("button", { name: "Upload source" }).click();
+    await page.getByLabel("Document number").fill("POL-UI");
+    await page.getByLabel("Document name").fill("Request verification policy");
+    await page.getByLabel("Reviewer").check();
+    await page.getByLabel("File").setInputFiles({
+      name: "verification.md",
+      mimeType: "text/markdown",
+      buffer: Buffer.from("# Verification policy\nVerify the request and retain approval."),
+    });
+    await page.getByRole("button", { name: "Upload immutable version" }).click();
+    await page.getByText("Source version uploaded. It is available as SOP evidence.", { exact: true }).waitFor();
     await page.getByRole("button", { name: "+ Create SOP" }).click();
     await page.getByLabel("SOP number").fill("UI-001");
     await page
@@ -33,6 +44,7 @@ process.stdin.on("end", async () => {
       .click();
     await page.getByText("Draft created.", { exact: true }).waitFor();
     await page.getByText("Attach source evidence", { exact: true }).click();
+    await page.locator('select[name=artifact_version_id]').selectOption({ label: "POL-UI · Version 1" });
     await page.getByLabel("Section or location").fill("Full procedure");
     await page
       .getByRole("button", { name: "Attach evidence", exact: true })
