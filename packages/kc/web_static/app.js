@@ -374,7 +374,12 @@ $("#login-form").onsubmit = safe(async () => {
 });
 $("#logout").onclick = safe(async () => {
   if (!leave()) return;
-  await api("logout", {});
+  const result = await api("logout", {});
+  if (result.url) {
+    clearSession();
+    window.location.assign(result.url);
+    return;
+  }
   dirty = false;
   data = null;
   selected = null;
@@ -393,4 +398,40 @@ $("#filter").onchange = list;
 $("#refresh").onclick = safe(() => {
   if (leave()) return load();
 });
-load().catch(() => {});
+$("#auth0-form").onsubmit = safe(async () => {
+  const button = $("#auth0-form button");
+  button.disabled = true;
+  try {
+    const result = await api("auth/start", {
+      organization: $("[name=organization]").value.trim(),
+    });
+    window.location.assign(result.url);
+  } finally {
+    button.disabled = false;
+  }
+});
+async function initializeSignIn() {
+  const config = await api("auth/config");
+  const normal = config.mode === "auth0";
+  $("#auth0-form").hidden = !normal;
+  $("#login-form").hidden = normal;
+  $("#signin-description").textContent = normal
+    ? "Use your organization's sign-in to securely access your procedures."
+    : "Development mode: use a short-lived access ticket. Two-factor authentication is not enabled in this mode.";
+  if (new URLSearchParams(window.location.search).has("signin")) {
+    notice(
+      "Sign-in could not be completed. Try again, or ask your administrator to check MFA and your organization membership.",
+      true,
+    );
+    window.history.replaceState({}, "", "/");
+  }
+  try {
+    await load();
+  } catch (error) {
+    if (config.mode !== "auth0" && !$("#login").hidden)
+      notice(error.message, true);
+  }
+}
+initializeSignIn().catch(() =>
+  notice("Sign-in is unavailable. Please try again shortly.", true),
+);

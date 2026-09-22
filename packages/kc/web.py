@@ -1,4 +1,4 @@
-"""Local SOP workspace. Authentication tickets come from the trusted broker."""
+"""Local SOP workspace with Auth0 MFA sign-in or explicit development ticket mode."""
 import argparse
 import json
 import os
@@ -8,11 +8,16 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from uuid import UUID
+from urllib.parse import urlsplit, parse_qs
+from urllib.error import URLError
+
+import jwt
 
 import psycopg
 
 from kc import knowledge
 from kc.session import tenant_transaction
+from kc.auth0 import Auth0, Auth0Settings
 
 STATIC = Path(__file__).with_name('web_static')
 
@@ -64,18 +69,25 @@ def dispatch(conn, action, payload):
 
 
 class WorkspaceServer(ThreadingHTTPServer):
-    def __init__(self, address, dsn):
+    def __init__(self, address, dsn, *, auth0_settings=None, dev_ticket_login=False):
+        if (auth0_settings is None) == (not dev_ticket_login):
+            raise ValueError('Configure Auth0 or explicitly enable development ticket login')
         super().__init__(address, Handler)
         self.dsn = dsn
         self.sessions = {}
         self.origin = f'http://127.0.0.1:{self.server_port}'
+        self.auth = None
+        if auth0_settings:
+            with psycopg.connect(dsn) as conn:
+                audience = conn.execute('SELECT session_user').fetchone()[0]
+            self.auth = Auth0(auth0_settings, self.origin, audience)
 
 
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *_):
         pass  # Never log tickets, request bodies, or catalog contents.
 
-    def respond(self, status, body, content_type='application/json', cookie=None):
+    def respond(self, status, body, content_type='application/json', cookie=None, location=None):
         data = json.dumps(body, default=str).encode() if content_type == 'application/json' else body
         self.send_response(status)
         self.send_header('Content-Type', content_type)
@@ -84,10 +96,22 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Referrer-Policy', 'no-referrer')
         self.send_header('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
-        if cookie:
-            self.send_header('Set-Cookie', cookie)
+        for value in ([cookie] if isinstance(cookie, str) else cookie or []):
+            self.send_header('Set-Cookie', value)
+        if location:
+            self.send_header('Location', location)
         self.end_headers()
         self.wfile.write(data)
+
+    def open_session(self, ticket, seconds=600):
+        now = time.monotonic()
+        self.server.sessions = {k: v for k, v in self.server.sessions.items() if v['expires'] > now}
+        old = SimpleCookie(self.headers.get('Cookie', '')).get('kc_session')
+        if old:
+            self.server.sessions.pop(old.value, None)
+        key = secrets.token_urlsafe(32)
+        self.server.sessions[key] = {'ticket': ticket, 'expires': now + seconds}
+        return f'kc_session={key}; HttpOnly; SameSite=Strict; Path=/; Max-Age={seconds}'
 
     def session(self):
         cookie = SimpleCookie(self.headers.get('Cookie', ''))
@@ -95,7 +119,7 @@ class Handler(BaseHTTPRequestHandler):
         entry = self.server.sessions.get(key)
         if not entry or entry['expires'] <= time.monotonic():
             self.server.sessions.pop(key, None)
-            raise PermissionError('Sign in with a current access ticket.')
+            raise PermissionError('Your session has ended. Please sign in again.')
         return key, entry
 
     def do_GET(self):
@@ -109,8 +133,23 @@ class Handler(BaseHTTPRequestHandler):
             # Fixed loopback host plus strict Origin prevent DNS rebinding and cross-site writes.
             if self.headers.get('Host') != self.server.origin.removeprefix('http://'):
                 return self.respond(403, {'error': 'Invalid host'})
-            if not write and self.path in ('/', '/app.js', '/style.css'):
-                name, mime = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript'), '/style.css': ('style.css', 'text/css')}[self.path]
+            path = urlsplit(self.path).path
+            if not write and path == '/api/auth/config':
+                return self.respond(200, {'mode': 'auth0' if self.server.auth else 'development'})
+            if not write and path == '/auth/callback' and self.server.auth:
+                expired = 'kc_login=; HttpOnly; SameSite=Lax; Path=/auth/callback; Max-Age=0'
+                try:
+                    query = parse_qs(urlsplit(self.path).query, strict_parsing=True)
+                    if 'error' in query or any(len(query.get(k, [])) != 1 for k in ('code', 'state')):
+                        raise ValueError('Invalid callback')
+                    browser = SimpleCookie(self.headers.get('Cookie', '')).get('kc_login')
+                    ticket, seconds = self.server.auth.finish(query['state'][0], browser.value if browser else '', query['code'][0])
+                    cookie = self.open_session(ticket, seconds)
+                    return self.respond(303, {}, cookie=[expired, cookie], location='/')
+                except (ValueError, KeyError, TypeError, PermissionError, jwt.PyJWTError, URLError, TimeoutError, psycopg.Error):
+                    return self.respond(303, {}, cookie=expired, location='/?signin=failed')
+            if not write and path in ('/', '/app.js', '/style.css'):
+                name, mime = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript'), '/style.css': ('style.css', 'text/css')}[path]
                 return self.respond(200, (STATIC / name).read_bytes(), mime)
             payload = {}
             if write:
@@ -122,7 +161,10 @@ class Handler(BaseHTTPRequestHandler):
                 payload = json.loads(self.rfile.read(size))
                 if not isinstance(payload, dict):
                     raise ValueError('Expected an object')
-            if write and self.path == '/api/login':
+            if write and path == '/api/auth/start' and self.server.auth:
+                url, browser = self.server.auth.begin(payload['organization'])
+                return self.respond(200, {'url': url}, cookie=f'kc_login={browser}; HttpOnly; SameSite=Lax; Path=/auth/callback; Max-Age=300')
+            if write and self.path == '/api/login' and not self.server.auth:
                 ticket = payload['ticket']
                 if not isinstance(ticket, str) or not 20 <= len(ticket) <= 512:
                     raise ValueError('Invalid access ticket')
@@ -131,15 +173,19 @@ class Handler(BaseHTTPRequestHandler):
                         actor = conn.execute("SELECT principal_type FROM security.context()").fetchone()
                         if not actor or actor[0] != 'USER':
                             raise PermissionError('A human account is required.')
-                now = time.monotonic()
-                self.server.sessions = {k: v for k, v in self.server.sessions.items() if v['expires'] > now}
-                key = secrets.token_urlsafe(32)
-                self.server.sessions[key] = {'ticket': ticket, 'expires': now + 600}
-                return self.respond(200, {'ok': True}, cookie=f'kc_session={key}; HttpOnly; SameSite=Strict; Path=/; Max-Age=600')
-            key, session = self.session()
+                return self.respond(200, {'ok': True}, cookie=self.open_session(ticket))
             if write and self.path == '/api/logout':
+                cookie = SimpleCookie(self.headers.get('Cookie', '')).get('kc_session')
+                key = cookie.value if cookie else ''
+                session = self.server.sessions.get(key)
                 self.server.sessions.pop(key, None)
-                return self.respond(200, {'ok': True}, cookie='kc_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
+                if session and self.server.auth:
+                    self.server.auth.revoke(session['ticket'])
+                result = {'ok': True}
+                if self.server.auth:
+                    result['url'] = self.server.auth.logout_url()
+                return self.respond(200, result, cookie='kc_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
+            key, session = self.session()
             with psycopg.connect(self.server.dsn) as conn:
                 with tenant_transaction(conn, session['ticket']):
                     if not write and self.path == '/api/workspace':
@@ -167,8 +213,14 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8080)
+    parser.add_argument('--dev-ticket-login', action='store_true', help='Explicit local development mode; does not use Auth0 or MFA')
     args = parser.parse_args()
-    server = WorkspaceServer(('127.0.0.1', args.port), os.environ['KC_WEB_DSN'])
+    try:
+        settings = None if args.dev_ticket_login else Auth0Settings.from_environment()
+        server = WorkspaceServer(('127.0.0.1', args.port), os.environ['KC_WEB_DSN'],
+                                 auth0_settings=settings, dev_ticket_login=args.dev_ticket_login)
+    except (KeyError, ValueError) as error:
+        parser.error(f'Sign-in configuration is incomplete: {error}')
     print(f'SOP workspace: {server.origin}', flush=True)
     server.serve_forever()
 

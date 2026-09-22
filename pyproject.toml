@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "knowledge-catalog-foundation"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["psycopg[binary]==3.2.10", "jsonschema==4.26.0"]
+dependencies = ["psycopg[binary]==3.2.10", "jsonschema==4.26.0", "PyJWT[crypto]==2.14.0"]
 
 [project.optional-dependencies]
 test = ["pytest==9.1.1"]

@@ -35,4 +35,4 @@ The [SOP walkthrough](docs/sop-workflow.md) now implements creating a draft, att
 
 ## SOP browser workspace
 
-The [browser workspace guide](docs/sop-ui.md) covers drafting procedures, attaching source evidence, assigning responsibilities, independent review, publication and version history. Run `python -m kc.web` with a configured `KC_WEB_DSN` and sign in with your individual access ticket. The first release is local-only; production sign-in and hosting remain separate work.
+The [browser workspace guide](docs/sop-ui.md) covers drafting procedures, attaching source evidence, assigning responsibilities, independent review, publication and version history. Normal sign-in now uses Auth0 with required MFA; follow the [Auth0 setup guide](docs/auth0-setup.md) to configure Microsoft, Google and email connections and link approved users. The app remains local-only; shared production hosting is separate work. Development ticket login requires the explicit `--dev-ticket-login` option.

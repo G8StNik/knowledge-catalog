@@ -15,7 +15,7 @@ from test_sop_workflow import sop  # Reuse the independently provisioned human i
 def web(sop, database):
     sop['editor'].commit()
     sop['reviewer'].commit()
-    server = WorkspaceServer(('127.0.0.1', 0), make_conninfo(database[0], user=database[1]['human'], password='kc-test-only'))
+    server = WorkspaceServer(('127.0.0.1', 0), make_conninfo(database[0], user=database[1]['human'], password='kc-test-only'), dev_ticket_login=True)
     worker = threading.Thread(target=server.serve_forever, daemon=True)
     worker.start()
     def client(ticket=None):

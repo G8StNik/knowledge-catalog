@@ -28,11 +28,25 @@
       <section id="login" class="card signin">
         <p class="eyebrow">YOUR SECURE WORKSPACE</p>
         <h2>Sign in to your catalog</h2>
-        <p>
-          Use the short-lived access ticket supplied by your administrator. Each
-          author and reviewer signs in with their own identity.
-        </p>
-        <form id="login-form">
+        <p id="signin-description">Preparing secure sign-in…</p>
+        <form id="auth0-form" hidden>
+          <label
+            >Organization code<input
+              name="organization"
+              autocomplete="organization"
+              maxlength="200"
+              required /></label
+          ><button class="primary">Continue to secure sign-in</button>
+          <p>
+            Choose Microsoft, Google, or email on the sign-in page. Two-factor
+            authentication is required.
+          </p>
+          <small
+            >Password reset and account recovery are available on that
+            page.</small
+          >
+        </form>
+        <form id="login-form" hidden>
           <label
             >Access ticket<input
               name="ticket"
