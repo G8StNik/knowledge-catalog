@@ -98,6 +98,32 @@ def test_web_uploads_versioned_source_without_exposing_original_bytes(web):
     assert len([e for e in reviewer_state['evidence'] if e['source_artifact_id'] == uploaded['source_artifact_id']]) == 2
 
 
+def test_source_library_access_changes_visibility_and_protects_owner(web):
+    s, server, client = web
+    author = client(s['tenant']['tickets']['human'])
+    reviewer = client(s['reviewer_ticket'])
+    state = author('/api/workspace')[1]
+    classification = next(c for c in state['classifications'] if c['configuration_revision_id'] == str(s['revision']))
+    payload = dict(workspace_id=str(s['tenant']['workspace']), configuration_revision_id=str(s['revision']),
+                   classification_id=classification['classification_id'], document_key='LIB-001',
+                   title='Library policy', file_name='library.txt', media_type='text/plain',
+                   content_base64=base64.b64encode(b'Controlled library source').decode())
+    status, uploaded = author('/api/source/upload', payload)
+    assert status == 200, uploaded
+    evidence = next(e for e in author('/api/workspace')[1]['evidence']
+                    if e['artifact_version_id'] == uploaded['artifact_version_id'])
+    artifact = evidence['source_artifact_id']
+    assert not any(e['source_artifact_id'] == artifact for e in reviewer('/api/workspace')[1]['evidence'])
+    status, members = author('/api/source/access?artifact=' + artifact)
+    assert status == 200 and {m['principal_id'] for m in members['members']} == {str(s['tenant']['human']), str(s['reviewer_id'])}
+    assert reviewer('/api/source/access?artifact=' + artifact)[0] == 403
+    assert author('/api/source/access', {'artifact_id': artifact, 'principal_id': str(s['reviewer_id']), 'allowed': True})[0] == 200
+    assert any(e['source_artifact_id'] == artifact for e in reviewer('/api/workspace')[1]['evidence'])
+    assert author('/api/source/access', {'artifact_id': artifact, 'principal_id': str(s['reviewer_id']), 'allowed': False})[0] == 200
+    assert not any(e['source_artifact_id'] == artifact for e in reviewer('/api/workspace')[1]['evidence'])
+    assert author('/api/source/access', {'artifact_id': artifact, 'principal_id': str(s['tenant']['human']), 'allowed': False})[0] == 409
+
+
 def test_web_auth_origin_logout_and_static(web):
     s, server, client = web
     anonymous = client()

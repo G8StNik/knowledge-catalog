@@ -10,6 +10,8 @@ const esc = (s) =>
   );
 let data,
   selected,
+  selectedSource = null,
+  view = "procedures",
   dirty = false;
 const stages = {
   DRAFT: "Draft",
@@ -38,6 +40,8 @@ function clearSession() {
   dirty = false;
   data = null;
   selected = null;
+  selectedSource = null;
+  view = "procedures";
   $("#workspace").hidden = true;
   $("#login").hidden = false;
   $("#new").hidden = true;
@@ -98,6 +102,12 @@ async function load(id = selected) {
   $("#identity").textContent = data.actor.display_name;
   selected = id;
   dirty = false;
+  setView(view);
+  if (view === "sources") {
+    if (selectedSource) await sourceDetail(selectedSource);
+    else sourceWelcome();
+    return;
+  }
   list();
   if (id && data.versions.some((v) => v.knowledge_version_id === id))
     detail(id);
@@ -108,6 +118,7 @@ async function load(id = selected) {
   }
 }
 function list() {
+  if (view === "sources") return sourceList();
   const term = $("#search").value.toLowerCase(),
     status = $("#filter").value;
   const items = data.versions.filter(
@@ -130,6 +141,84 @@ function list() {
           if (leave()) detail(b.dataset.version);
         }),
     );
+}
+function setView(next) {
+  if (view !== next) $("#search").value = "";
+  view = next;
+  for (const [name, button] of [["procedures", "#procedures-tab"], ["sources", "#sources-tab"]]) {
+    $(button).classList.toggle("active", name === view);
+    $(button).setAttribute("aria-pressed", String(name === view));
+  }
+  $("#stage-filter").hidden = view === "sources";
+  $("#search-label").textContent = view === "sources" ? "Find a source" : "Find a procedure";
+  $("#search").placeholder = view === "sources" ? "Search document name, number or text" : "Search title or SOP number";
+  list();
+}
+function sourceDocuments() {
+  const documents = new Map();
+  for (const evidence of data.evidence)
+    if (!documents.has(evidence.source_artifact_id)) documents.set(evidence.source_artifact_id, evidence);
+  return [...documents.values()];
+}
+function sourceWelcome() {
+  selectedSource = null;
+  $("#detail").innerHTML = "<h2>Source Library</h2><p>Select a document to inspect its versions, citations and access, or upload a source.</p>";
+}
+function sourceList() {
+  const term = $("#search").value.trim().toLowerCase();
+  const documents = sourceDocuments().filter((d) => {
+    const versions = data.evidence.filter((e) => e.source_artifact_id === d.source_artifact_id);
+    return `${d.title} ${d.external_key} ${versions.map((v) => `${v.file_name || ""} ${v.content}`).join(" ")}`.toLowerCase().includes(term);
+  });
+  $("#list").innerHTML = documents.map((d) => {
+    const count = data.evidence.filter((e) => e.source_artifact_id === d.source_artifact_id).length;
+    const cited = data.citations.some((c) => data.evidence.some((e) => e.source_artifact_id === d.source_artifact_id && e.artifact_version_id === c.artifact_version_id));
+    return `<button class="item ${selectedSource === d.source_artifact_id ? "active" : ""}" data-source="${d.source_artifact_id}"><small>${esc(d.external_key)} · ${count} version${count === 1 ? "" : "s"}</small><strong>${esc(d.title)}</strong><small>${cited ? "Cited by an accessible SOP" : "No visible SOP citations"}</small></button>`;
+  }).join("") || "<p>No sources match this view.</p>";
+  $("#list").querySelectorAll("[data-source]").forEach((button) => button.onclick = safe(async () => {
+    if (leave()) await sourceDetail(button.dataset.source);
+  }));
+}
+async function sourceDetail(artifactId) {
+  const versions = data.evidence.filter((e) => e.source_artifact_id === artifactId);
+  if (!versions.length) return sourceWelcome();
+  selectedSource = artifactId;
+  sourceList();
+  const latest = versions[0];
+  const classification = data.classifications.find((c) => c.classification_id === latest.classification_id)?.display_name || "Unclassified source";
+  const workspace = data.workspaces.find((w) => w.workspace_id === latest.owning_workspace_id)?.workspace_name || "Workspace";
+  const editable = data.workspaces.some((w) => w.workspace_id === latest.owning_workspace_id);
+  const citations = data.citations.filter((c) => versions.some((e) => e.artifact_version_id === c.artifact_version_id));
+  $("#detail").innerHTML = `<p class="eyebrow">SOURCE LIBRARY</p><h2>${esc(latest.title)}</h2><div class="source-meta"><span>Number: ${esc(latest.external_key)}</span><span>Owner: ${esc(person(latest.owner_principal_id))}</span><span>Classification: ${esc(classification)}</span><span>Workspace: ${esc(workspace)}</span></div><p>${citations.length} visible SOP citation${citations.length === 1 ? "" : "s"} · ${versions.length} preserved version${versions.length === 1 ? "" : "s"}</p>${editable ? '<button id="new-source-version">Upload new version</button> <button id="manage-access">Manage readers</button>' : ""}<h3>Version history</h3>${versions.map((v, index) => {
+    const state = v.effective_to && v.effective_to < new Date().toISOString().slice(0, 10) ? "Expired" : index ? "Superseded" : "Latest";
+    const references = citations.filter((c) => c.artifact_version_id === v.artifact_version_id);
+    return `<section class="source-version"><h3>Version ${esc(v.version_key)} · ${esc(state)}</h3><div class="source-meta"><span>File: ${esc(v.file_name || "External source")}</span><span>Captured: ${esc(new Date(v.captured_at).toLocaleDateString())}</span><span>Effective: ${esc(v.effective_from || "Not set")}</span><span>End: ${esc(v.effective_to || "Not set")}</span></div><details><summary>Read extracted text</summary><div class="prose">${esc(v.content)}</div></details><details><summary>Source details</summary><p>Media type: ${esc(v.media_type || "External")}<br>Text fingerprint: ${esc(v.content_hash)}<br>Original file fingerprint: ${esc(v.original_content_hash || "Not stored")}</p></details><h4>Cited by</h4>${references.map((c) => {
+      const sop = data.versions.find((item) => item.knowledge_version_id === c.knowledge_version_id);
+      return sop ? `<button class="citation-link" data-version="${sop.knowledge_version_id}">${esc(sop.knowledge_key)} · ${esc(sop.title)} · ${esc(c.locator)}</button>` : "";
+    }).join("") || "<p>No visible SOP cites this version.</p>"}</section>`;
+  }).join("")}<div id="access-panel"></div>`;
+  $("#new-source-version")?.addEventListener("click", () => uploadSource(artifactId));
+  $("#manage-access")?.addEventListener("click", safe(async () => showAccess(artifactId)));
+  $("#detail").querySelectorAll(".citation-link").forEach((button) => button.onclick = () => {
+    setView("procedures");
+    detail(button.dataset.version);
+  });
+}
+async function showAccess(artifactId) {
+  const result = await api(`source/access?artifact=${encodeURIComponent(artifactId)}`);
+  const panel = $("#access-panel");
+  const owner = data.evidence.find((e) => e.source_artifact_id === artifactId)?.owner_principal_id;
+  panel.innerHTML = `<h3>Reader access</h3><p class="muted">Only members of this workspace can receive access. Changes apply to every source version.</p>${result.members.map((p) => {
+    const active = p.is_allowed && p.valid_until && new Date(p.valid_until) > new Date();
+    const protectedReader = active && (p.principal_id === data.actor.principal_id || p.principal_id === owner);
+    return `<p><span>${esc(p.display_name)}</span> · ${active ? "Can read" : "No access"} ${protectedReader ? "<small>Required access</small>" : `<button data-principal="${p.principal_id}" data-allowed="${!active}">${active ? "Remove access" : "Give access"}</button>`}</p>`;
+  }).join("")}`;
+  panel.querySelectorAll("[data-principal]").forEach((button) => button.onclick = safe(async () => {
+    await api("source/access", {artifact_id: artifactId, principal_id: button.dataset.principal, allowed: button.dataset.allowed === "true"});
+    await load();
+    notice("Source access updated.");
+    await showAccess(artifactId);
+  }));
 }
 function metadataFields(type, values = {}) {
   return data.fields
@@ -255,15 +344,16 @@ function create() {
     await act("create", p);
   });
 }
-function uploadSource() {
+function uploadSource(preselected = null) {
   if (!leave()) return;
   selected = null;
   dirty = false;
   list();
-  const documents = [...new Map(data.evidence.filter((e) => e.owning_workspace_id).map((e) => [e.source_artifact_id, e])).values()];
+  const documents = sourceDocuments().filter((e) => data.workspaces.some((w) => w.workspace_id === e.owning_workspace_id));
   const revision = data.types.find((t) => t.key === "sop")?.configuration_revision_id || data.types[0]?.configuration_revision_id;
   $("#detail").innerHTML = `<p class="eyebrow">TRUSTED SOURCE EVIDENCE</p><h2>Upload a source document</h2><p>The original file and extracted text are preserved as an immutable version. PDF, text, and Markdown files up to 10 MB are supported.</p><form id="source-form"><label>Existing document <select name="source_artifact_id"><option value="">Create a new document</option>${documents.map((d) => `<option value="${d.source_artifact_id}">${esc(d.title)} · Latest version ${esc(d.version_key)}</option>`).join("")}</select></label><div id="new-source-fields"><div class="grid"><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><label>Document number<input name="document_key" placeholder="POLICY-001" required></label></div><label>Document name<input name="title" placeholder="Information handling policy" required></label><div class="grid"><label>Owner<select name="owner_principal_id" required>${options(data.people, "principal_id", "display_name", data.actor.principal_id)}</select></label><label>Classification<select name="classification_id" required>${options(data.classifications.filter((c) => c.configuration_revision_id === revision), "classification_id", "display_name")}</select></label></div></div><div class="grid"><label>Effective date<input name="effective_from" type="date"></label><label>End date<input name="effective_to" type="date"></label></div><label>File<input name="file" type="file" accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf" required></label><fieldset><legend>Give access</legend><p class="muted">The uploader is always granted access. Select other workspace members who may read and cite every version of this source.</p>${data.people.map((p) => `<label><input class="inline" type="checkbox" name="principal_ids" value="${p.principal_id}"> ${esc(p.display_name)}</label>`).join("")}</fieldset><button class="primary">Upload immutable version</button></form>`;
   const existing = $("[name=source_artifact_id]");
+  if (typeof preselected === "string") existing.value = preselected;
   const newFields = $("#new-source-fields");
   const updateMode = () => {
     const doc = documents.find((d) => d.source_artifact_id === existing.value);
@@ -300,9 +390,15 @@ function uploadSource() {
       content_base64: btoa(binary),
     };
     notice("Uploading and extracting text…");
-    await api("source/upload", payload);
+    const uploaded = await api("source/upload", payload);
     dirty = false;
+    view = "sources";
+    selectedSource = doc?.source_artifact_id || null;
     await load();
+    if (!selectedSource) {
+      const created = data.evidence.find((e) => e.artifact_version_id === uploaded.artifact_version_id);
+      if (created) await sourceDetail(created.source_artifact_id);
+    }
     notice("Source version uploaded. It is available as SOP evidence.");
   });
 }
@@ -447,7 +543,13 @@ $("#logout").onclick = safe(async () => {
   notice("Signed out.");
 });
 $("#new").onclick = create;
-$("#upload-source").onclick = uploadSource;
+$("#upload-source").onclick = () => uploadSource();
+$("#procedures-tab").onclick = () => {
+  if (leave()) { setView("procedures"); selected ? detail(selected) : $("#detail").innerHTML = "<h2>Your procedures, in one place.</h2><p>Select an SOP or create a draft to get started.</p>"; }
+};
+$("#sources-tab").onclick = () => {
+  if (leave()) { setView("sources"); selectedSource ? sourceDetail(selectedSource) : sourceWelcome(); }
+};
 $("#search").oninput = list;
 $("#filter").onchange = list;
 $("#refresh").onclick = safe(() => {

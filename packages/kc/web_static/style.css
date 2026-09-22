@@ -149,6 +149,34 @@ small {
   align-items: end;
   margin-bottom: 22px;
 }
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #dce3dc;
+  margin-bottom: 22px;
+}
+.view-tabs button {
+  border-radius: 7px 7px 0 0;
+  border-bottom: 0;
+}
+.view-tabs button.active {
+  background: #205747;
+  border-color: #205747;
+  color: #fff;
+}
+.source-meta {
+  display: flex;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.source-meta span {
+  color: #526258;
+}
+.source-version {
+  border-top: 1px solid #dce3dc;
+  padding: 16px 0;
+}
 .toolbar label:first-child {
   flex: 1;
 }

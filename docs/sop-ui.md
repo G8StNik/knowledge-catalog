@@ -31,6 +31,8 @@ Use the [Auth0 setup guide](auth0-setup.md) for normal sign-in with mandatory MF
 
 Search and stage filters help locate versions. Version history opens the exact historical content, citations and reviews. Forms escape stored text rather than rendering source HTML. A failed action leaves the form intact. The UI uses the standard starter workflow transition keys; custom workflow mappings remain available through the CLI.
 
+The **Source Library** tab searches accessible documents and extracted text. It shows owners, classifications, effective dates, version history, fingerprints and links to accessible SOPs that cite each version. Workspace editors with source access can upload a new version and manage readers. See [Source document uploads](source-uploads.md).
+
 ## Deployment boundary
 
 This is a local browser application, not an internet deployment. It uses Python's standard HTTP server to avoid adding an application framework to the foundation. It must not be exposed through a tunnel or reverse proxy. A production rollout needs a supported web server, HTTPS, a live configured Auth0 tenant, distributed session management, rate limits, pagination and operational monitoring. It currently loads all records visible to the actor in one workspace response and is intended for small local catalogs.

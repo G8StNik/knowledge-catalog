@@ -61,13 +61,17 @@
         <small>Access is checked on every request.</small>
       </section>
       <section id="workspace" hidden>
+        <nav class="view-tabs" aria-label="Workspace sections">
+          <button id="procedures-tab" class="active" aria-pressed="true">Procedures</button>
+          <button id="sources-tab" aria-pressed="false">Source Library</button>
+        </nav>
         <div class="toolbar">
           <label
-            >Find a procedure<input
+            ><span id="search-label">Find a procedure</span><input
               id="search"
               type="search"
               placeholder="Search title or SOP number" /></label
-          ><label
+          ><label id="stage-filter"
             >Stage<select id="filter">
               <option value="">All stages</option>
               <option value="DRAFT">Drafts</option>

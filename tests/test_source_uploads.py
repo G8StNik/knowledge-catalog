@@ -67,3 +67,14 @@ def test_other_tenant_cannot_add_a_version(sop, tenant_factory, connect):
         sources.upload(other, workspace_id=other_tenant['workspace'], configuration_revision_id=s['revision'],
             classification_id=classification(s), document_key='POL-PRIVATE', title='Attack', file_name='attack.txt',
             media_type='text/plain', content=b'Attempted overwrite', source_artifact_id=artifact)
+
+
+def test_named_source_owner_receives_access_without_extra_reader_grant(sop):
+    s = sop
+    version = sources.upload(s['editor'], workspace_id=s['tenant']['workspace'],
+        configuration_revision_id=s['revision'], classification_id=classification(s), document_key='POL-OWNER',
+        title='Owner policy', file_name='owner.txt', media_type='text/plain', content=b'Owner may verify this source.',
+        owner_principal_id=s['reviewer_id'])
+    s['editor'].commit()
+    assert s['reviewer'].execute('SELECT content FROM source.artifact_version WHERE artifact_version_id=%s',
+                                 (version,)).fetchone()[0] == 'Owner may verify this source.'

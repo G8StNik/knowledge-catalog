@@ -20,6 +20,7 @@ import psycopg
 from kc import knowledge, sources
 from kc.session import tenant_transaction
 from kc.auth0 import Auth0, Auth0Settings
+from kc.ids import uuid7
 
 STATIC = Path(__file__).with_name('web_static')
 
@@ -204,6 +205,16 @@ class Handler(BaseHTTPRequestHandler):
                         except (binascii.Error, KeyError):
                             raise ValueError('Invalid file')
                         result = {'artifact_version_id': sources.upload(conn, content=content, **payload)}
+                    elif not write and path == '/api/source/access':
+                        artifact = UUID(parse_qs(urlsplit(self.path).query)['artifact'][0])
+                        result = {'members': rows(conn, 'SELECT * FROM source.access_members(%s)', (artifact,))}
+                    elif write and path == '/api/source/access':
+                        if not isinstance(payload['allowed'], bool):
+                            raise ValueError('Access decision must be true or false')
+                        conn.execute('SELECT source.set_access(%s,%s,%s,%s)',
+                                     (UUID(payload['artifact_id']), UUID(payload['principal_id']),
+                                      payload['allowed'], uuid7()))
+                        result = {'ok': True}
                     elif write and self.path.startswith('/api/action/'):
                         result = {'version_id': dispatch(conn, self.path.rsplit('/', 1)[-1], payload)}
                     else:

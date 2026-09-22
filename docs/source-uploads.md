@@ -23,3 +23,9 @@ Only an authenticated human with edit access to the selected workspace can uploa
 The source document records its owning workspace, human owner, active governed classification and configuration revision. Effective dates describe when the source applies; they do not silently remove existing citations. Raw file bytes stay behind the application boundary and are omitted from workspace API responses.
 
 The current local implementation stores files in PostgreSQL so the transaction, hash and immutable history remain testable together. A production object-storage adapter can later replace the byte storage while retaining provider-independent identifiers, hashes, access checks and version semantics.
+
+## Browse the Source Library
+
+Open **Source Library** in the workspace to search document numbers, names, file names and extracted text. A document page shows its owner, classification, workspace, effective dates, fingerprints and every version you may read. Earlier versions are labeled superseded; a version past its end date is labeled expired. The **Cited by** section links to SOP versions you are allowed to see, and identifies versions with no visible citations.
+
+Workspace editors who already have source access can upload a newer version or open **Manage readers**. The reader list contains active members of that workspace. Giving or removing access updates all versions immediately, including visibility of SOPs that cite the source. The editor cannot remove their own access or the source owner's access. Changes are audited. The Source Library does not yet provide a separate download of the original file; it shows extracted text and original-file fingerprints.

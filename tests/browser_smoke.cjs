@@ -27,6 +27,13 @@ process.stdin.on("end", async () => {
     });
     await page.getByRole("button", { name: "Upload immutable version" }).click();
     await page.getByText("Source version uploaded. It is available as SOP evidence.", { exact: true }).waitFor();
+    await page.getByRole("button", { name: "Source Library" }).click();
+    await page.getByLabel("Find a source").fill("POL-UI");
+    await page.locator('[data-source]').first().click();
+    await page.getByText("Version 1 · Latest").waitFor();
+    await page.getByText("Read extracted text").click();
+    await page.getByText("Verify the request and retain approval.").waitFor();
+    await page.getByRole("button", { name: "Procedures" }).click();
     await page.getByRole("button", { name: "+ Create SOP" }).click();
     await page.getByLabel("SOP number").fill("UI-001");
     await page
@@ -85,6 +92,11 @@ process.stdin.on("end", async () => {
         exact: true,
       })
       .waitFor();
+    await page.getByRole("button", { name: "Source Library" }).click();
+    await page.locator('[data-source]').first().click();
+    await page.getByRole("button", { name: /UI-001.*Request review procedure/ }).waitFor();
+    await page.getByRole("button", { name: "Procedures" }).click();
+    await page.locator('[data-version]').first().click();
     await page.screenshot({
       path: "../sop-workspace-desktop.png",
       fullPage: true,
