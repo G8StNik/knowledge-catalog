@@ -176,7 +176,13 @@ function invitationList() {
   }));
 }
 function peopleDetail() {
-  $("#detail").innerHTML = `<p class="eyebrow">ORGANIZATION ONBOARDING</p><h2>Invite a person</h2><p>Create a one-time code for someone who should join this organization. Share it with the intended person through your normal trusted channel. The code expires after seven days and is shown only once.</p><form id="invite-form"><label>Email address<input name="email" type="email" autocomplete="off" required></label><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><fieldset><legend>Workspace permissions</legend><label><input class="inline" type="checkbox" name="can_edit"> Can create and edit procedures and sources</label><label><input class="inline" type="checkbox" name="can_review"> Can review and publish procedures</label></fieldset><button class="primary" ${data.workspaces.length ? "" : "disabled"}>Create invitation</button></form><div id="invitation-result"></div><h3>Current members</h3>${data.people.map((person) => `<p>${esc(person.display_name)} · ${esc(person.status)}</p>`).join("") || "<p>No members yet.</p>"}`;
+  $("#detail").innerHTML = `<p class="eyebrow">ORGANIZATION ONBOARDING</p><h2>Invite a person</h2><p>Create a one-time code for someone who should join this organization. Share it with the intended person through your normal trusted channel. The code expires after seven days and is shown only once.</p><form id="invite-form"><label>Email address<input name="email" type="email" autocomplete="off" required></label><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><fieldset><legend>Workspace permissions</legend><label><input class="inline" type="checkbox" name="can_edit"> Can create and edit procedures and sources</label><label><input class="inline" type="checkbox" name="can_review"> Can review and publish procedures</label></fieldset><button class="primary" ${data.workspaces.length ? "" : "disabled"}>Create invitation</button></form><div id="invitation-result"></div><h3>Current members</h3>${data.people.map((person) => `<p>${esc(person.display_name)} · ${esc(person.status)} ${person.status === "ACTIVE" && person.principal_id !== data.actor.principal_id ? `<button data-deactivate="${person.principal_id}">Remove access</button>` : ""}</p>`).join("") || "<p>No members yet.</p>"}`;
+  $("#detail").querySelectorAll("[data-deactivate]").forEach((button) => button.onclick = safe(async () => {
+    if (!confirm("Remove this person's access to the organization? Their published work will remain in the catalog.")) return;
+    await api("organization/deactivate-member", {principal_id: button.dataset.deactivate});
+    await load();
+    notice("Member access removed.");
+  }));
   watch();
   $("#invite-form").onsubmit = safe(async () => {
     const form = $("#invite-form");

@@ -96,3 +96,26 @@ def test_expired_invitation_cannot_create_membership(administrator, database, te
                       (hashlib.sha256(code.encode()).digest(),))
     with psycopg.connect(broker) as conn:
         with pytest.raises(psycopg.errors.InsufficientPrivilege): accept(conn, database, tenant, code)
+
+
+def test_admin_offboards_member_and_revokes_existing_ticket(administrator, database, tenant, broker):
+    code = create_invitation(administrator, tenant)
+    administrator.commit()
+    with psycopg.connect(broker) as conn:
+        principal, ticket = accept(conn, database, tenant, code)
+    with psycopg.connect(make_conninfo(database[0], user=database[1]['human'], password='kc-test-only')) as runtime:
+        with tenant_transaction(runtime, ticket):
+            assert runtime.execute('SELECT security.current_principal()').fetchone()[0] == principal
+    administrator.execute('SELECT security.begin_context(%s)', (tenant['tickets']['human'],))
+    administrator.execute('SELECT identity.deactivate_member(%s,%s)', (principal, uuid7()))
+    administrator.commit()
+    with psycopg.connect(database[0]) as conn:
+        assert conn.execute('SELECT status FROM identity.principal WHERE principal_id=%s', (principal,)).fetchone()[0] == 'DEACTIVATED'
+        assert conn.execute('SELECT count(*) FROM security.session_ticket WHERE principal_id=%s', (principal,)).fetchone()[0] == 0
+        assert conn.execute('SELECT count(*) FROM security.workspace_access WHERE principal_id=%s', (principal,)).fetchone()[0] == 0
+    with psycopg.connect(make_conninfo(database[0], user=database[1]['human'], password='kc-test-only')) as runtime:
+        with pytest.raises(psycopg.errors.InvalidAuthorizationSpecification):
+            runtime.execute('SELECT security.begin_context(%s)', (ticket,))
+    administrator.execute('SELECT security.begin_context(%s)', (tenant['tickets']['human'],))
+    with pytest.raises(psycopg.errors.CheckViolation):
+        administrator.execute('SELECT identity.deactivate_member(%s,%s)', (tenant['human'], uuid7()))

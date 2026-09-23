@@ -144,6 +144,13 @@ def test_organization_admin_can_create_list_and_revoke_invitation(web, database)
     assert reviewer('/api/organization/revoke', {'invitation_id': invite['invitation_id']})[0] == 403
     assert admin('/api/organization/revoke', {'invitation_id': invite['invitation_id']})[0] == 200
     assert admin('/api/organization/invitations')[1]['invitations'][0]['status'] == 'REVOKED'
+    assert reviewer('/api/organization/deactivate-member',
+                    {'principal_id': str(s['tenant']['human'])})[0] == 403
+    assert admin('/api/organization/deactivate-member',
+                 {'principal_id': str(s['tenant']['human'])})[0] == 409
+    assert admin('/api/organization/deactivate-member',
+                 {'principal_id': str(s['reviewer_id'])})[0] == 200
+    assert reviewer('/api/workspace')[0] == 401
 
 
 def test_web_auth_origin_logout_and_static(web):

@@ -20,4 +20,8 @@ The recipient opens the Knowledge Catalog sign-in page, enters the organization 
 
 Invited people do not automatically become organization administrators or configuration approvers. Workspace edit/review permissions apply to the selected workspace; source documents retain their separate access lists. The first administrator can review invitation status, but never see a code again after creation.
 
+## Remove a member's access
+
+An organization administrator can select **Remove access** beside an active member in **People & invitations**. This deactivates the member, ends their organization membership, revokes active sign-in tickets, and removes workspace, source, configuration and group access. Published SOPs, source evidence, and audit history retain the original author's identity. Administrators cannot remove themselves, and the database prevents removal of the last active organization administrator. Restoring a former member is a separate verified administrative process; a new invitation alone will not reactivate the historical membership.
+
 This local pilot does not provision Auth0 users, send email or expose an internet-facing invitation page. Invitees must already have or create an Auth0 account using the enabled connections. A live Auth0 tenant with MFA and verified email claims is still required to exercise the complete sign-in flow outside tests.

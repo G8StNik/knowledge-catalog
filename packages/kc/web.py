@@ -231,6 +231,10 @@ class Handler(BaseHTTPRequestHandler):
                     elif write and path == '/api/organization/revoke':
                         conn.execute('SELECT identity.revoke_invitation(%s,%s)', (UUID(payload['invitation_id']), uuid7()))
                         result = {'ok': True}
+                    elif write and path == '/api/organization/deactivate-member':
+                        conn.execute('SELECT identity.deactivate_member(%s,%s)',
+                                     (UUID(payload['principal_id']), uuid7()))
+                        result = {'ok': True}
                     elif write and self.path.startswith('/api/action/'):
                         result = {'version_id': dispatch(conn, self.path.rsplit('/', 1)[-1], payload)}
                     else:
