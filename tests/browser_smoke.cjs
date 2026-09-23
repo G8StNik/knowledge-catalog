@@ -16,7 +16,16 @@ process.stdin.on("end", async () => {
     await page.goto(config.origin);
     await page.getByLabel("Access ticket").fill(config.author);
     await page.getByRole("button", { name: "Open workspace" }).click();
-    await page.getByRole("button", { name: "Upload source" }).click();
+    await page.getByRole("heading", { name: "Capture a note" }).waitFor();
+    await page.getByLabel("Kind").selectOption("MEETING");
+    await page.getByLabel("Title", { exact: true }).fill("Planning meeting notes");
+    await page.getByLabel("Note", { exact: true }).fill("The team agreed to verify requests before approval.");
+    await page.getByRole("button", { name: "Save note to Library" }).click();
+    await page.getByText("Note saved to the Library. Use Manage readers to share it.").waitFor();
+    await page.getByRole("button", { name: "Home" }).click();
+    await page.getByLabel("Find knowledge").fill("verify requests");
+    await page.locator('#list [data-kind="source"]').filter({ hasText: "Planning meeting notes" }).waitFor();
+    await page.getByRole("button", { name: "Add document" }).click();
     await page.getByLabel("Document number").fill("POL-UI");
     await page.getByLabel("Document name").fill("Request verification policy");
     await page.getByLabel("Reviewer").check();
@@ -27,7 +36,7 @@ process.stdin.on("end", async () => {
     });
     await page.getByRole("button", { name: "Upload immutable version" }).click();
     await page.getByText("Source version uploaded. It is available as SOP evidence.", { exact: true }).waitFor();
-    await page.getByRole("button", { name: "Source Library" }).click();
+    await page.getByRole("button", { name: "Library" }).click();
     await page.getByLabel("Find a source").fill("POL-UI");
     await page.locator('[data-source]').first().click();
     await page.getByText("Version 1 · Latest").waitFor();
@@ -92,7 +101,7 @@ process.stdin.on("end", async () => {
         exact: true,
       })
       .waitFor();
-    await page.getByRole("button", { name: "Source Library" }).click();
+    await page.getByRole("button", { name: "Library" }).click();
     await page.locator('[data-source]').first().click();
     await page.getByRole("button", { name: /UI-001.*Request review procedure/ }).waitFor();
     await page.getByRole("button", { name: "Procedures" }).click();

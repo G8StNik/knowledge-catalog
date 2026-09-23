@@ -3,27 +3,27 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SOP workspace · Knowledge Catalog</title>
+    <title>Knowledge Catalog · Shared knowledge workspace</title>
     <link rel="stylesheet" href="/style.css" />
     <script src="/app.js" defer></script>
   </head>
   <body>
     <header>
       <a href="/" class="brand">◈ <span>Knowledge Catalog</span></a
-      ><span class="tag">SOP WORKSPACE</span><span id="identity"></span
+      ><span class="tag">SHARED KNOWLEDGE</span><span id="identity"></span
       ><button id="logout" hidden>Sign out</button>
     </header>
     <main>
       <section class="intro">
         <div>
-          <p class="eyebrow">CLARITY IN EVERY STEP</p>
-          <h1>Procedures people can trust.</h1>
+          <p class="eyebrow">YOUR TEAM'S KNOWLEDGE, TOGETHER</p>
+          <h1>Capture what your team knows.</h1>
           <p>
-            Build with evidence. Review with care. Keep every published version.
+            Bring notes and documents into one searchable library. Turn trusted sources into reviewed procedures.
           </p>
         </div>
         <div class="intro-actions">
-          <button id="upload-source" hidden>Upload source</button>
+          <button id="upload-source" hidden>Add document</button>
           <button id="new" class="primary" hidden>+ Create SOP</button>
         </div>
       </section>
@@ -63,16 +63,17 @@
       </section>
       <section id="workspace" hidden>
         <nav class="view-tabs" aria-label="Workspace sections">
-          <button id="procedures-tab" class="active" aria-pressed="true">Procedures</button>
-          <button id="sources-tab" aria-pressed="false">Source Library</button>
+          <button id="home-tab" class="active" aria-pressed="true">Home</button>
+          <button id="sources-tab" aria-pressed="false">Library</button>
+          <button id="procedures-tab" aria-pressed="false">Procedures</button>
           <button id="people-tab" aria-pressed="false" hidden>People &amp; invitations</button>
         </nav>
         <div class="toolbar">
           <label
-            ><span id="search-label">Find a procedure</span><input
+            ><span id="search-label">Find knowledge</span><input
               id="search"
               type="search"
-              placeholder="Search title or SOP number" /></label
+              placeholder="Search notes, documents and procedures" /></label
           ><label id="stage-filter"
             >Stage<select id="filter">
               <option value="">All stages</option>
@@ -84,19 +85,16 @@
           ><button id="refresh">Refresh</button>
         </div>
         <div class="layout">
-          <nav id="list" aria-label="SOP versions"></nav>
+          <nav id="list" aria-label="Knowledge items"></nav>
           <section id="detail" class="card">
-            <h2>Your procedures, in one place.</h2>
-            <p>
-              Select an SOP to see its content, evidence and history, or create
-              your first draft.
-            </p>
+            <h2>Welcome to your knowledge workspace.</h2>
+            <p>Add a note or document to get started.</p>
           </section>
         </div>
       </section>
     </main>
     <footer>
-      Knowledge Catalog <span>Evidence-led knowledge · Preserved history</span>
+      Knowledge Catalog <span>Capture · Find · Govern</span>
     </footer>
   </body>
 </html>

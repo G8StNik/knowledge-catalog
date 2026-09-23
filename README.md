@@ -33,10 +33,12 @@ See the database guide for native PostgreSQL setup, optional demo tenants, and c
 
 The [SOP walkthrough](docs/sop-workflow.md) now implements creating a draft, attaching immutable source evidence, independent human review, publishing version 1, and creating version 2 without modifying published history. It includes workspace/source access checks, a command-line client and integration tests. See the walkthrough for the supported scope and remaining production integrations.
 
-## SOP browser workspace
+## Shared knowledge browser workspace
 
-The [browser workspace guide](docs/sop-ui.md) covers drafting procedures, uploading and attaching source evidence, assigning responsibilities, independent review, publication and version history. The [Source Library](docs/source-uploads.md) lets readers search documents, inspect versions and citations, and lets authorized workspace editors manage source access. Uploaded PDF, text and Markdown evidence retains the original file and extracted searchable text as an immutable version. Normal sign-in now uses Auth0 with required MFA; follow the [Auth0 setup guide](docs/auth0-setup.md) to configure Microsoft, Google and email connections and link approved users. The app remains local-only; shared production hosting is separate work. Development ticket login requires the explicit `--dev-ticket-login` option.
+The [browser workspace guide](docs/sop-ui.md) covers drafting procedures, uploading and attaching source evidence, assigning responsibilities, independent review, publication and version history. The [Library](docs/source-uploads.md) lets readers search documents, inspect versions and citations, and lets authorized workspace editors manage source access. Uploaded PDF, text and Markdown evidence retains the original file and extracted searchable text as an immutable version. Normal sign-in now uses Auth0 with required MFA; follow the [Auth0 setup guide](docs/auth0-setup.md) to configure Microsoft, Google and email connections and link approved users. The app remains local-only; shared production hosting is separate work. Development ticket login requires the explicit `--dev-ticket-login` option.
 
 [Organization onboarding and invitations](docs/organization-onboarding.md) add an administrator-led first organization setup and one-time codes for new members. Invitation acceptance requires Auth0 MFA and a verified email matching the invitation.
+
+The [shared knowledge home](docs/shared-knowledge-home.md) now captures pasted notes and searches accessible notes, documents and procedures. It states the remaining gap to meeting connectors, task extraction and cited AI answers; the current browser workspace does not claim those capabilities.
 
 To try the workspace on this computer without Auth0, follow the [local demo guide](docs/local-demo.md). It prepares a separate demo database, test author and reviewer, and the approved starter configuration.

@@ -177,6 +177,14 @@ small {
   border-top: 1px solid #dce3dc;
   padding: 16px 0;
 }
+.home-next {
+  margin-top: 32px;
+  padding: 18px 22px;
+  border-radius: 9px;
+  background: #f1f5f2;
+  border: 1px solid #dce8dd;
+}
+.home-next h3 { margin-top: 0; }
 .toolbar label:first-child {
   flex: 1;
 }
@@ -293,6 +301,9 @@ select:focus-visible {
   display: none !important;
 }
 @media (max-width: 850px) {
+  .view-tabs {
+    flex-wrap: wrap;
+  }
   .layout {
     grid-template-columns: 1fr;
   }

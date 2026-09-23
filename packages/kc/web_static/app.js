@@ -11,7 +11,7 @@ const esc = (s) =>
 let data,
   selected,
   selectedSource = null,
-  view = "procedures",
+  view = "home",
   dirty = false;
 const stages = {
   DRAFT: "Draft",
@@ -41,7 +41,7 @@ function clearSession() {
   data = null;
   selected = null;
   selectedSource = null;
-  view = "procedures";
+  view = "home";
   $("#people-tab").hidden = true;
   $("#workspace").hidden = true;
   $("#login").hidden = false;
@@ -101,7 +101,7 @@ async function load(id = selected) {
   } catch {
     data.invitations = null;
     $("#people-tab").hidden = true;
-    if (view === "people") view = "procedures";
+    if (view === "people") view = "home";
   }
   $("#login").hidden = true;
   $("#workspace").hidden = false;
@@ -112,6 +112,7 @@ async function load(id = selected) {
   selected = id;
   dirty = false;
   setView(view);
+  if (view === "home") return homeDetail();
   if (view === "people") return peopleDetail();
   if (view === "sources") {
     if (selectedSource) await sourceDetail(selectedSource);
@@ -128,6 +129,7 @@ async function load(id = selected) {
   }
 }
 function list() {
+  if (view === "home") return homeList();
   if (view === "people") return invitationList();
   if (view === "sources") return sourceList();
   const term = $("#search").value.toLowerCase(),
@@ -156,14 +158,79 @@ function list() {
 function setView(next) {
   if (view !== next) $("#search").value = "";
   view = next;
-  for (const [name, button] of [["procedures", "#procedures-tab"], ["sources", "#sources-tab"], ["people", "#people-tab"]]) {
+  for (const [name, button] of [["home", "#home-tab"], ["procedures", "#procedures-tab"], ["sources", "#sources-tab"], ["people", "#people-tab"]]) {
     $(button).classList.toggle("active", name === view);
     $(button).setAttribute("aria-pressed", String(name === view));
   }
   $("#stage-filter").hidden = view !== "procedures";
-  $("#search-label").textContent = view === "sources" ? "Find a source" : view === "people" ? "Find an invitation" : "Find a procedure";
-  $("#search").placeholder = view === "sources" ? "Search document name, number or text" : view === "people" ? "Search email or status" : "Search title or SOP number";
+  $("#search-label").textContent = view === "home" ? "Find knowledge" : view === "sources" ? "Find a source" : view === "people" ? "Find an invitation" : "Find a procedure";
+  $("#search").placeholder = view === "home" ? "Search notes, documents and procedures" : view === "sources" ? "Search document name, number or text" : view === "people" ? "Search email or status" : "Search title or SOP number";
   list();
+}
+function homeList() {
+  const term = $("#search").value.trim().toLowerCase();
+  const noteLabel = (key) => {
+    const kind = key.match(/^(NOTE|MEETING|FAQ|POLICY|SALES)-[0-9a-f]{8}-[0-9a-f-]{27,}$/)?.[1];
+    return ({NOTE: "Note", MEETING: "Meeting notes", FAQ: "Question and answer",
+      POLICY: "Policy or workflow note", SALES: "Customer or sales insight"})[kind] || "Document";
+  };
+  const sources = sourceDocuments().filter((item) =>
+    data.evidence.filter((v) => v.source_artifact_id === item.source_artifact_id)
+      .some((v) => `${item.title} ${item.external_key} ${v.content}`.toLowerCase().includes(term)))
+    .map((item) => ({kind: "source", id: item.source_artifact_id, title: item.title,
+      label: noteLabel(item.external_key),
+      date: item.captured_at}));
+  const latestProcedures = new Map();
+  for (const version of data.versions)
+    if (!latestProcedures.has(version.knowledge_item_id)) latestProcedures.set(version.knowledge_item_id, version);
+  const procedures = [...latestProcedures.values()]
+    .filter((item) => data.versions.filter((v) => v.knowledge_item_id === item.knowledge_item_id)
+      .some((v) => `${v.title} ${v.knowledge_key} ${v.content}`.toLowerCase().includes(term)))
+    .map((item) => ({kind: "procedure", id: item.knowledge_version_id, title: item.title,
+      label: `Procedure · ${stages[item.status]}`, date: item.created_at}));
+  const matches = [...sources, ...procedures].sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 30);
+  $("#list").innerHTML = matches.map((item) =>
+    `<button class="item" data-kind="${item.kind}" data-id="${esc(item.id)}"><small>${esc(item.label)}</small><strong>${esc(item.title)}</strong></button>`)
+    .join("") || `<p>${term ? "No accessible knowledge matches this search." : "Nothing captured yet. Add a note or document to begin."}</p>`;
+  $("#list").querySelectorAll("[data-kind]").forEach((button) => button.onclick = safe(async () => {
+    if (!leave()) return;
+    if (button.dataset.kind === "source") {
+      setView("sources");
+      await sourceDetail(button.dataset.id);
+    } else {
+      setView("procedures");
+      detail(button.dataset.id);
+    }
+  }));
+}
+function homeDetail() {
+  const revision = data.types[0]?.configuration_revision_id;
+  const classifications = data.classifications.filter((c) => c.configuration_revision_id === revision);
+  const canCapture = data.workspaces.length && classifications.length;
+  $("#detail").innerHTML = `<p class="eyebrow">SHARED KNOWLEDGE HOME</p><h2>Capture a note</h2><p>Paste meeting notes, a useful answer, a workflow observation, or a customer question. The original note is preserved as a source that can later support a reviewed SOP.</p><form id="note-form"><div class="grid"><label>Kind<select name="kind"><option value="NOTE">General note</option><option value="MEETING">Meeting notes</option><option value="FAQ">Question and answer</option><option value="POLICY">Policy or workflow note</option><option value="SALES">Customer or sales insight</option></select></label><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label></div><label>Title<input name="title" maxlength="500" placeholder="What should your team remember?" required></label><label>Note<textarea name="content" rows="8" placeholder="Paste the notes or write what you learned…" required></textarea></label><label>Classification<select name="classification_id" required>${options(classifications, "classification_id", "display_name")}</select></label><p class="muted">Only you can read this note at first. You can give workspace members access from the Library after saving it.</p><button class="primary" ${canCapture ? "" : "disabled"}>Save note to Library</button></form><div class="home-next"><h3>From knowledge to answers</h3><p>Search currently finds accessible notes, documents and procedures. AI answers with citations, meeting summaries, and task extraction are planned; they are not active in this pilot.</p></div>`;
+  $("#note-form").querySelectorAll("input,textarea,select").forEach((el) => el.addEventListener("input", () => dirty = true));
+  $("#note-form").onsubmit = safe(async () => {
+    const form = $("#note-form");
+    const values = Object.fromEntries(new FormData(form));
+    const content = `# ${values.title.trim()}\n\n${values.content.trim()}`;
+    const bytes = new TextEncoder().encode(content);
+    if (!values.content.trim() || bytes.length > 10 * 1024 * 1024) throw Error("Enter a note no larger than 10 MB.");
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 32768)
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+    const result = await api("source/upload", {
+      workspace_id: values.workspace_id, configuration_revision_id: revision,
+      classification_id: values.classification_id, document_key: `${values.kind}-${crypto.randomUUID()}`,
+      title: values.title.trim(), owner_principal_id: data.actor.principal_id,
+      principal_ids: [], file_name: "note.md", media_type: "text/markdown", content_base64: btoa(binary),
+    });
+    dirty = false;
+    view = "sources";
+    await load();
+    const created = data.evidence.find((item) => item.artifact_version_id === result.artifact_version_id);
+    if (created) await sourceDetail(created.source_artifact_id);
+    notice("Note saved to the Library. Use Manage readers to share it.");
+  });
 }
 function invitationList() {
   const term = $("#search").value.toLowerCase();
@@ -593,6 +660,9 @@ $("#logout").onclick = safe(async () => {
 });
 $("#new").onclick = create;
 $("#upload-source").onclick = () => uploadSource();
+$("#home-tab").onclick = () => {
+  if (leave()) { setView("home"); homeDetail(); }
+};
 $("#procedures-tab").onclick = () => {
   if (leave()) { setView("procedures"); selected ? detail(selected) : $("#detail").innerHTML = "<h2>Your procedures, in one place.</h2><p>Select an SOP or create a draft to get started.</p>"; }
 };

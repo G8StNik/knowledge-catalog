@@ -1,0 +1,7 @@
+# Shared knowledge home: current pilot scope
+
+The browser workspace now opens on **Home**. A member can paste a general note, meeting note, question and answer, policy/workflow observation, or customer/sales insight. Saving preserves it as an immutable text source in the Library. The note is initially visible only to its author; a workspace editor can grant other members access from **Manage readers**. The author chooses a workspace and governed classification. The existing document upload supports PDF, plain text, and Markdown, with version history and source access controls.
+
+Home search spans accessible notes, documents and procedure content already loaded for the signed-in member. Library offers source version history, extracted text, citations, and reader management. Procedures remain a separate governed workflow for draft, evidence, review, publication, and revision.
+
+This is the first capture-and-find slice of the intended shared knowledge catalog. It does **not** yet ingest Teams, Zoom, Google Meet, Otter, Granola, websites, recordings, Word files or PowerPoints; extract meeting tasks; create AI chatbots; or generate answers. Home says this plainly. The local pilot's search is a client-side filter over accessible records, not a scalable cross-organization search service. AI answers must be built with source citations and the same permission boundary before they are offered to users.

@@ -1,5 +1,7 @@
 # SOP browser workspace
 
+The browser opens on **Home**, where members can paste notes and search accessible knowledge. **Library** holds notes and documents; **Procedures** holds the governed SOP workflow below. See [shared knowledge home](shared-knowledge-home.md) for the current capture-and-find scope and remaining product gaps.
+
 For normal user sign-in with required MFA, start with the [Auth0 setup guide](auth0-setup.md). The ticket instructions below are the separate local development mode.
 
 ## Development ticket mode
