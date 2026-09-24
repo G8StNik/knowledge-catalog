@@ -27,7 +27,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -e '.[test]'
+      - run: python -m pip install --upgrade pip==26.2.1
+      - run: python -m pip install -e '.[test]' pip-audit==2.10.1
+      - run: python -m pip_audit --skip-editable
       - run: python -m kc.migrate
       - run: python -m kc.migrate
       - run: python -m pytest -q --junitxml=test-results/postgres.xml

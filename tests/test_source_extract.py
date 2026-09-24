@@ -50,3 +50,12 @@ def test_broken_office_rejected(name, media):
 def test_file_extension_must_match_format():
     with pytest.raises(ValueError, match='do not match'):
         extract_text('disguised.exe', 'text/html', b'<p>Unexpected</p>')
+
+
+def test_office_xml_rejects_dtd_and_entity_expansion():
+    content = office_file('word/document.xml',
+        '<!DOCTYPE document [<!ENTITY secret SYSTEM "file:///windows/win.ini">]>'
+        '<document>&secret;</document>')
+    with pytest.raises(ValueError, match='could not be read'):
+        extract_text('unsafe.docx',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', content)

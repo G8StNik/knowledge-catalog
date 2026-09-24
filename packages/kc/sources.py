@@ -3,8 +3,10 @@ import base64
 from io import BytesIO
 from html.parser import HTMLParser
 from uuid import UUID
-from xml.etree import ElementTree as ET
 from zipfile import BadZipFile, ZipFile
+
+from defusedxml import ElementTree as ET
+from defusedxml.common import DefusedXmlException
 
 from psycopg.types.json import Jsonb
 from pypdf import PdfReader
@@ -60,13 +62,13 @@ def _office_text(content, word):
                 raise ValueError('The Office document is too large to extract')
             paragraphs = []
             for name in targets:
-                root = ET.fromstring(archive.read(name))
+                root = ET.fromstring(archive.read(name), forbid_dtd=True)
                 text_tag = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}t' if word else '{http://schemas.openxmlformats.org/drawingml/2006/main}t'
                 text = ' '.join(node.text or '' for node in root.iter(text_tag)).strip()
                 if text:
                     paragraphs.append(text)
             return '\n\n'.join(paragraphs)
-    except (BadZipFile, ET.ParseError, KeyError, RuntimeError) as error:
+    except (BadZipFile, ET.ParseError, DefusedXmlException, KeyError, RuntimeError) as error:
         raise ValueError('The Office document could not be read') from error
 
 
