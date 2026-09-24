@@ -467,7 +467,7 @@ function uploadSource(preselected = null) {
   list();
   const documents = sourceDocuments().filter((e) => data.workspaces.some((w) => w.workspace_id === e.owning_workspace_id));
   const revision = data.types.find((t) => t.key === "sop")?.configuration_revision_id || data.types[0]?.configuration_revision_id;
-  $("#detail").innerHTML = `<p class="eyebrow">TRUSTED SOURCE EVIDENCE</p><h2>Upload a source document</h2><p>The original file and extracted text are preserved as an immutable version. PDF, text, and Markdown files up to 10 MB are supported.</p><form id="source-form"><label>Existing document <select name="source_artifact_id"><option value="">Create a new document</option>${documents.map((d) => `<option value="${d.source_artifact_id}">${esc(d.title)} · Latest version ${esc(d.version_key)}</option>`).join("")}</select></label><div id="new-source-fields"><div class="grid"><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><label>Document number<input name="document_key" placeholder="POLICY-001" required></label></div><label>Document name<input name="title" placeholder="Information handling policy" required></label><div class="grid"><label>Owner<select name="owner_principal_id" required>${options(data.people, "principal_id", "display_name", data.actor.principal_id)}</select></label><label>Classification<select name="classification_id" required>${options(data.classifications.filter((c) => c.configuration_revision_id === revision), "classification_id", "display_name")}</select></label></div></div><div class="grid"><label>Effective date<input name="effective_from" type="date"></label><label>End date<input name="effective_to" type="date"></label></div><label>File<input name="file" type="file" accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf" required></label><fieldset><legend>Give access</legend><p class="muted">The uploader is always granted access. Select other workspace members who may read and cite every version of this source.</p>${data.people.map((p) => `<label><input class="inline" type="checkbox" name="principal_ids" value="${p.principal_id}"> ${esc(p.display_name)}</label>`).join("")}</fieldset><button class="primary">Upload immutable version</button></form>`;
+  $("#detail").innerHTML = `<p class="eyebrow">TRUSTED SOURCE EVIDENCE</p><h2>Upload a source document</h2><p>Review extracted text before saving the original file and text as an immutable version. PDF, Word, PowerPoint, saved HTML, text, and Markdown files up to 10 MB are supported.</p><form id="source-form"><label>Existing document <select name="source_artifact_id"><option value="">Create a new document</option>${documents.map((d) => `<option value="${d.source_artifact_id}">${esc(d.title)} · Latest version ${esc(d.version_key)}</option>`).join("")}</select></label><div id="new-source-fields"><div class="grid"><label>Workspace<select name="workspace_id" required>${options(data.workspaces, "workspace_id", "workspace_name")}</select></label><label>Document number<input name="document_key" placeholder="POLICY-001" required></label></div><label>Document name<input name="title" placeholder="Information handling policy" required></label><div class="grid"><label>Owner<select name="owner_principal_id" required>${options(data.people, "principal_id", "display_name", data.actor.principal_id)}</select></label><label>Classification<select name="classification_id" required>${options(data.classifications.filter((c) => c.configuration_revision_id === revision), "classification_id", "display_name")}</select></label></div></div><div class="grid"><label>Effective date<input name="effective_from" type="date"></label><label>End date<input name="effective_to" type="date"></label></div><label>File<input name="file" type="file" accept=".pdf,.docx,.pptx,.html,.htm,.txt,.md" required></label><fieldset><legend>Give access</legend><p class="muted">The uploader is always granted access. Select other workspace members who may read and cite every version of this source.</p>${data.people.map((p) => `<label><input class="inline" type="checkbox" name="principal_ids" value="${p.principal_id}"> ${esc(p.display_name)}</label>`).join("")}</fieldset><button class="primary">Review extracted text</button></form><div id="source-preview"></div>`;
   const existing = $("[name=source_artifact_id]");
   if (typeof preselected === "string") existing.value = preselected;
   const newFields = $("#new-source-fields");
@@ -484,8 +484,8 @@ function uploadSource(preselected = null) {
     const values = Object.fromEntries(new FormData(form));
     const file = form.elements.file.files[0];
     if (!file || file.size > 10 * 1024 * 1024) throw Error("Choose a file no larger than 10 MB.");
-    const media = file.type || ({ pdf: "application/pdf", md: "text/markdown", txt: "text/plain" }[file.name.split(".").pop().toLowerCase()]);
-    if (!["application/pdf", "text/plain", "text/markdown"].includes(media)) throw Error("Choose a PDF, text, or Markdown file.");
+    const media = ({ pdf: "application/pdf", docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation", html: "text/html", htm: "text/html", md: "text/markdown", txt: "text/plain" }[file.name.split(".").pop().toLowerCase()]);
+    if (!media) throw Error("Choose a PDF, Word, PowerPoint, saved HTML, text, or Markdown file.");
     const doc = documents.find((d) => d.source_artifact_id === values.source_artifact_id);
     const bytes = new Uint8Array(await file.arrayBuffer());
     let binary = "";
@@ -505,17 +505,30 @@ function uploadSource(preselected = null) {
       media_type: media,
       content_base64: btoa(binary),
     };
-    notice("Uploading and extracting text…");
-    const uploaded = await api("source/upload", payload);
-    dirty = false;
-    view = "sources";
-    selectedSource = doc?.source_artifact_id || null;
-    await load();
-    if (!selectedSource) {
-      const created = data.evidence.find((e) => e.artifact_version_id === uploaded.artifact_version_id);
-      if (created) await sourceDetail(created.source_artifact_id);
-    }
-    notice("Source version uploaded. It is available as SOP evidence.");
+    notice("Extracting text for review…");
+    const preview = await api("source/preview", {file_name: file.name, media_type: media, content_base64: payload.content_base64});
+    const panel = $("#source-preview");
+    panel.innerHTML = `<h3>Review extracted text</h3><p>Source: <strong>${esc(file.name)}</strong>. Check that the text below is complete and accurate. It becomes searchable and available as evidence only after you save.</p><div class="prose extraction-preview">${esc(preview.text)}</div><button class="primary" id="confirm-source">Save reviewed source</button> <button id="edit-source" type="button">Edit upload</button>`;
+    form.hidden = true;
+    $("#edit-source").onclick = () => { panel.innerHTML = ""; form.hidden = false; };
+    $("#confirm-source").onclick = safe(async () => {
+      const button = $("#confirm-source");
+      button.disabled = true;
+      try {
+        const uploaded = await api("source/upload", payload);
+        dirty = false;
+        view = "sources";
+        selectedSource = doc?.source_artifact_id || null;
+        await load();
+        if (!selectedSource) {
+          const created = data.evidence.find((e) => e.artifact_version_id === uploaded.artifact_version_id);
+          if (created) await sourceDetail(created.source_artifact_id);
+        }
+        notice("Source version uploaded. It is available as SOP evidence.");
+      } finally {
+        button.disabled = false;
+      }
+    });
   });
 }
 function detail(id) {

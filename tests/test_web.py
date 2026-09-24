@@ -1,6 +1,8 @@
 """Exercise the real HTTP boundary and database policies together."""
 import json
 import base64
+from io import BytesIO
+from zipfile import ZipFile
 import threading
 import urllib.error
 import urllib.request
@@ -10,6 +12,24 @@ import pytest
 from psycopg.conninfo import make_conninfo
 from kc.web import WorkspaceServer
 from test_sop_workflow import sop  # Reuse the independently provisioned human identities.
+
+
+def test_source_preview_requires_session_and_does_not_store(web):
+    s, _, client = web
+    content = BytesIO()
+    with ZipFile(content, 'w') as archive:
+        archive.writestr('word/document.xml',
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:t>Imported policy text</w:t></w:body></w:document>')
+    payload = {'file_name': 'policy.docx',
+               'media_type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+               'content_base64': base64.b64encode(content.getvalue()).decode()}
+    assert client()('/api/source/preview', payload)[0] == 401
+    author = client(s['tenant']['tickets']['human'])
+    before = len(author('/api/workspace')[1]['evidence'])
+    status, result = author('/api/source/preview', payload)
+    assert status == 200 and result['text'] == 'Imported policy text'
+    assert len(author('/api/workspace')[1]['evidence']) == before
 
 
 @pytest.fixture

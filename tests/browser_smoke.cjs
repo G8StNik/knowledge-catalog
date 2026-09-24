@@ -34,7 +34,9 @@ process.stdin.on("end", async () => {
       mimeType: "text/markdown",
       buffer: Buffer.from("# Verification policy\nVerify the request and retain approval."),
     });
-    await page.getByRole("button", { name: "Upload immutable version" }).click();
+    await page.getByRole("button", { name: "Review extracted text" }).click();
+    await page.getByText("Verify the request and retain approval.").waitFor();
+    await page.getByRole("button", { name: "Save reviewed source" }).click();
     await page.getByText("Source version uploaded. It is available as SOP evidence.", { exact: true }).waitFor();
     await page.getByRole("button", { name: "Library" }).click();
     await page.getByLabel("Find a source").fill("POL-UI");

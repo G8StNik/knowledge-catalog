@@ -166,7 +166,7 @@ class Handler(BaseHTTPRequestHandler):
                 if self.headers.get('Origin') != self.server.origin or self.headers.get('Content-Type') != 'application/json':
                     return self.respond(403, {'error': 'Invalid request origin or content type'})
                 size = int(self.headers.get('Content-Length', '0'))
-                maximum = 14 * 1024 * 1024 if path == '/api/source/upload' else 1024 * 1024
+                maximum = 14 * 1024 * 1024 if path in ('/api/source/upload', '/api/source/preview') else 1024 * 1024
                 if size < 1 or size > maximum:
                     return self.respond(413, {'error': 'Request is too large'})
                 payload = json.loads(self.rfile.read(size))
@@ -201,6 +201,12 @@ class Handler(BaseHTTPRequestHandler):
                 with tenant_transaction(conn, session['ticket']):
                     if not write and self.path == '/api/workspace':
                         result = snapshot(conn)
+                    elif write and path == '/api/source/preview':
+                        try:
+                            content = base64.b64decode(payload['content_base64'], validate=True)
+                        except (binascii.Error, KeyError):
+                            raise ValueError('Invalid file')
+                        result = {'text': sources.extract_text(payload['file_name'], payload['media_type'], content)}
                     elif write and path == '/api/source/upload':
                         try:
                             content = base64.b64decode(payload.pop('content_base64'), validate=True)

@@ -24,7 +24,7 @@ Use the [Auth0 setup guide](auth0-setup.md) for normal sign-in with mandatory MF
 
 ## User flow
 
-1. Select **Upload source** to add PDF, text or Markdown evidence, or to add a new immutable version of an existing document. Choose its workspace, human owner, governed classification and readers. See [Source document uploads](source-uploads.md).
+1. Select **Add document** to preview and add PDF, Word, PowerPoint, saved HTML, text or Markdown evidence, or to add a new immutable version of an existing document. Choose its workspace, human owner, governed classification and readers. See [Source document uploads](source-uploads.md).
 2. Select **Create SOP**, choose an authorized workspace, configured knowledge type and domain, then fill in the procedure and metadata. The SOP type is selected by default when available.
 3. Save the draft. Attach one or more accessible source versions with a section/location and evidence note. Assign the required owner and approver responsibilities.
 4. Select **Submit for review**. Required fields, evidence, responsibilities and effective configuration are enforced by the database. Submitted content is frozen.

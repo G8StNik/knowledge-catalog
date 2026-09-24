@@ -185,6 +185,14 @@ small {
   border: 1px solid #dce8dd;
 }
 .home-next h3 { margin-top: 0; }
+.extraction-preview {
+  max-height: 320px;
+  overflow: auto;
+  white-space: pre-wrap;
+  border: 1px solid #dce3dc;
+  padding: 16px;
+  margin-bottom: 16px;
+}
 .toolbar label:first-child {
   flex: 1;
 }
