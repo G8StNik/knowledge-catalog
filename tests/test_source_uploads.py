@@ -1,4 +1,6 @@
 import hashlib
+from io import BytesIO
+from zipfile import ZipFile
 
 import psycopg
 import pytest
@@ -11,6 +13,22 @@ def classification(s):
     return s['editor'].execute(
         'SELECT classification_id FROM governance.classification WHERE configuration_revision_id=%s AND is_enabled LIMIT 1',
         (s['revision'],)).fetchone()[0]
+
+
+def test_word_upload_passes_database_format_rule(sop):
+    content = BytesIO()
+    with ZipFile(content, 'w') as archive:
+        archive.writestr('word/document.xml',
+            '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:t>Verify requests</w:t></w:body></w:document>')
+    original = content.getvalue()
+    version = sources.upload(sop['editor'], workspace_id=sop['tenant']['workspace'],
+        configuration_revision_id=sop['revision'], classification_id=classification(sop),
+        document_key='WORD-001', title='Word policy', file_name='policy.docx',
+        media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', content=original)
+    assert sop['editor'].execute(
+        'SELECT content,original_content FROM source.artifact_version WHERE artifact_version_id=%s',
+        (version,)).fetchone() == ('Verify requests', original)
 
 
 def test_upload_and_new_version_preserve_original_history_and_acl(sop):
