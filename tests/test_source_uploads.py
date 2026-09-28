@@ -31,6 +31,29 @@ def test_word_upload_passes_database_format_rule(sop):
         (version,)).fetchone() == ('Verify requests', original)
 
 
+def test_workspace_removal_blocks_source_despite_retained_acl(sop, database):
+    s = sop
+    version = sources.upload(s['editor'], workspace_id=s['tenant']['workspace'],
+        configuration_revision_id=s['revision'], classification_id=classification(s),
+        document_key='RESTRICTED-001', title='Workspace source', file_name='source.txt',
+        media_type='text/plain', content=b'Workspace-only knowledge',
+        principal_ids=[s['reviewer_id']])
+    artifact = s['editor'].execute(
+        'SELECT source_artifact_id FROM source.artifact_version WHERE artifact_version_id=%s',
+        (version,)).fetchone()[0]
+    s['editor'].commit()
+    assert s['reviewer'].execute(
+        'SELECT count(*) FROM source.artifact_version WHERE artifact_version_id=%s',
+        (version,)).fetchone()[0] == 1
+    with psycopg.connect(database[0]) as admin:
+        admin.execute('DELETE FROM security.workspace_access WHERE organization_id=%s AND workspace_id=%s AND principal_id=%s',
+                      (s['tenant']['id'], s['tenant']['workspace'], s['reviewer_id']))
+    assert s['reviewer'].execute('SELECT security.has_source_access(%s)', (artifact,)).fetchone()[0] is False
+    assert s['reviewer'].execute(
+        'SELECT count(*) FROM source.artifact_version WHERE artifact_version_id=%s',
+        (version,)).fetchone()[0] == 0
+
+
 def test_upload_and_new_version_preserve_original_history_and_acl(sop):
     s = sop
     first_bytes = b'# Access requests\nVerify the requester and owner.'
